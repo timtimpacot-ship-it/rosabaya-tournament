@@ -281,6 +281,7 @@ header{display:none!important}main.wrap{width:auto!important;max-width:none!impo
     <button class="tab" data-tab="teams" onclick="showTab('teams')"><span>♟</span>Team Registration</button>
     <button class="tab" data-tab="gallery" onclick="showTab('gallery')"><span>▧</span>Team Player Gallery</button>
     <button class="tab" data-tab="registrations" onclick="showTab('registrations')"><span>✎</span>Player Registrations</button>
+    <button class="tab" data-tab="viewers" onclick="showTab('viewers')"><span>◉</span>Viewer Site</button>
     <button class="tab" data-tab="bracket" onclick="showTab('bracket')"><span>♜</span>Tournament Bracket</button>
     <button class="tab" data-tab="schedule" onclick="showTab('schedule')"><span>▦</span>Match Schedule</button>
     <button class="tab" data-tab="results" onclick="showTab('results')"><span>◉</span>Match Results</button>
@@ -371,7 +372,12 @@ header{display:none!important}main.wrap{width:auto!important;max-width:none!impo
  </form></div>
  <div class="card"><div class="row"><h2>Registered teams</h2><span class="smalltext">Edit or remove teams before generating a bracket.</span></div><div id="teamList" class="teamlist"></div></div>
 </section>
-<section id="registrations" class="page hidden">
+<section id="viewers" class="page hidden">
+ <div class="hero"><div><div class="eyebrow">PUBLIC VIEWING</div><h1>Viewer Site</h1><p>Mobile site para sa mga manonood: schedule, standings, results, bracket at player profiles.</p></div></div>
+ <div class="card"><h2>I-publish ang latest data</h2><p class="smalltext">Pindutin ang Publish pagkatapos mong mag-update ng teams, schedule o scores. Hindi awtomatiko ang update sa viewer site.</p><div class="formactions"><button class="btn" id="pubBtn" onclick="publishViewer()">Publish to Viewers</button></div><div class="smalltext" id="pubStatus" style="margin-top:10px"></div></div>
+ <div class="card"><h2>Viewer QR Code</h2><div class="row" style="justify-content:flex-start;gap:20px;align-items:flex-start"><div id="viewQR" style="background:#fff;padding:12px;border-radius:12px"></div><div><div class="smalltext" id="viewUrl" style="word-break:break-all;margin-bottom:10px"></div><button class="btn small" onclick="downloadViewQR()">Download QR (PNG)</button></div></div></div>
+</section>
+ <section id="registrations" class="page hidden">
  <div class="hero"><div><div class="eyebrow">PLAYER SELF-REGISTRATION</div><h1>Player Registrations</h1><p>I-scan ng players ang QR code para ipasok ang IGN, picture, team at role nila.</p></div><span class="pill" id="regCount">0 pending</span></div>
  <div class="card"><h2>QR Code</h2><div class="row" style="justify-content:flex-start;gap:20px;align-items:flex-start"><div id="regQR" style="background:#fff;padding:12px;border-radius:12px"></div><div><div class="smalltext" id="regUrl" style="word-break:break-all;margin-bottom:10px"></div><button class="btn small" onclick="downloadRegQR()">Download QR (PNG)</button></div></div></div>
  <div class="card"><div class="row"><h2>Pending submissions</h2><button class="btn secondary small" onclick="loadRegs()">Refresh</button></div><div id="regList"><div class="empty">Pindutin ang Refresh.</div></div></div>
@@ -845,6 +851,25 @@ load();if(sessionStorage.getItem('rosabayaAdmin')==='yes'){$('loginScreen').clas
  window.rejectReg=async function(id){if(!confirm('Itago ang registration na ito?'))return;
   try{await rpc('resolve_registration',{p_pin:data.pin,p_id:id,p_status:'rejected'})}catch(e){toast('Hindi na-update: '+e.message);return}
   regs=regs.filter(r=>r.id!==id);renderRegs()};
+})();
+</script>
+
+<script>
+(function(){
+ const _show=showTab;showTab=function(id){_show(id);if(id==='viewers')drawViewQR()};
+ let vq=null;const vurl=()=>new URL('viewer.html',location.href).href;
+ window.drawViewQR=function(){$('viewUrl').textContent=vurl();if(vq||!window.QRCode)return;vq=new QRCode($('viewQR'),{text:vurl(),width:220,height:220,correctLevel:QRCode.CorrectLevel.M})};
+ window.downloadViewQR=function(){const c=$('viewQR').querySelector('canvas');if(!c)return;const a=document.createElement('a');a.href=c.toDataURL('image/png');a.download='rosabaya-viewer-qr.png';a.click()};
+ const small=src=>(!src||!String(src).startsWith('data:'))?Promise.resolve(src||''):new Promise(res=>{const i=new Image();i.onload=()=>{const k=Math.min(1,128/Math.max(i.width,i.height)),c=document.createElement('canvas');c.width=i.width*k;c.height=i.height*k;c.getContext('2d').drawImage(i,0,0,c.width,c.height);res(c.toDataURL('image/png'))};i.onerror=()=>res('');i.src=src});
+ window.publishViewer=async function(){const b=$('pubBtn'),st=$('pubStatus');b.disabled=true;st.textContent='Nagpa-publish...';
+  try{const teams=await Promise.all(data.teams.map(async t=>({id:t.id,name:t.name,captain:t.captain,logo:await small(t.logo),players:(t.players||[]).map(p=>typeof p==='string'?{name:p,photo:'',role:''}:{name:p.name,photo:p.photo||'',role:p.role||'Flex'})})));
+   const matches=allMatches().map(({m,label,section})=>({id:m.id,label,section,a:m.a,b:m.b,sa:m.sa,sb:m.sb,winner:m.winner,date:m.date,time:m.time,bestOf:m.bestOf}));
+   const body=JSON.stringify({p_pin:data.pin,p_data:{eventName:data.eventName,season:data.season,teams,matches}});
+   const r=await fetch(RB.url+'/rest/v1/rpc/publish_data',{method:'POST',headers:{apikey:RB.key,Authorization:'Bearer '+RB.key,'Content-Type':'application/json'},body});
+   if(!r.ok){const j=await r.json().catch(()=>({}));throw Error(j.message||r.status)}
+   st.textContent='Na-publish noong '+new Date().toLocaleString('en-PH')+' ('+(body.length/1024/1024).toFixed(1)+' MB)';toast('Na-publish na sa viewer site.')}
+  catch(e){st.textContent='Hindi na-publish: '+e.message+'. I-check kung na-run ang supabase-viewer-setup.sql at tugma ang PIN.'}
+  b.disabled=false};
 })();
 </script>
 </body>
