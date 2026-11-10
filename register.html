@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en-PH"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Player Registration | Rosabaya ML Tournament</title>
+<style>
+:root{--bg:#0b1020;--panel:#141d33;--line:#304463;--gold:#ffc857;--cyan:#56d8e8;--txt:#f5f7ff;--muted:#aab6d0;--green:#69d6a5;--red:#ff6b78}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 85% -10%,#26385e 0,transparent 40%),var(--bg);color:var(--txt);font:15px/1.5 Inter,system-ui,Arial,sans-serif;display:grid;place-items:start center;padding:22px 14px}
+.box{width:min(460px,100%);background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:24px}
+.eyebrow{color:var(--cyan);font-size:11px;font-weight:900;letter-spacing:2.5px}h1{margin:6px 0 4px;font-size:26px}p{color:var(--muted);margin:0 0 16px}
+label{display:block;font-size:12px;font-weight:700;color:var(--muted);margin:14px 0 5px}
+input,select{width:100%;background:#0c1426;border:1px solid var(--line);border-radius:9px;padding:12px;color:var(--txt);font:inherit;outline:none}input:focus,select:focus{border-color:var(--cyan)}
+.pic{display:flex;align-items:center;gap:14px}.pic .prev{width:84px;height:84px;flex:none;border-radius:50%;background:#304466;display:grid;place-items:center;color:var(--gold);font-weight:800;overflow:hidden;border:2px solid var(--line)}.prev img{width:100%;height:100%;object-fit:cover}
+button{width:100%;margin-top:22px;padding:14px;border:0;border-radius:10px;background:linear-gradient(135deg,#ffe16a,#f4a900);color:#141a2a;font:inherit;font-weight:900;cursor:pointer}button:disabled{opacity:.6}
+.msg{margin-top:14px;padding:11px 13px;border-radius:9px;font-size:13px;display:none}.msg.ok{display:block;background:#0f2e24;color:var(--green)}.msg.err{display:block;background:#3a1a24;color:var(--red)}
+.hp{display:none}
+</style></head><body>
+<div class="box">
+<div class="eyebrow">ROSABAYA ML TOURNAMENT</div><h1>Player Registration</h1><p>Punan ang details mo para mapasama ka sa roster ng team mo.</p>
+<form id="f" name="player-registration">
+<p class="hp"><label>Huwag punan: <input name="bot-field"></label></p>
+<label for="ign">IGN (In-Game Name)</label><input id="ign" name="ign" required maxlength="40" autocomplete="off">
+<label for="team">Team</label><input id="team" name="team" required maxlength="60" autocomplete="off" placeholder="Eksaktong pangalan ng team mo">
+<label for="role">Role</label>
+<select id="role" name="role" required><option value="">Pumili ng role</option><option>Tank</option><option>Fighter</option><option>Core</option><option>Mage</option><option>Marksman</option><option>Flex</option></select>
+<label>Profile picture</label>
+<div class="pic"><div class="prev" id="prev">IGN</div><input id="photo" name="photo" type="file" accept="image/*" required></div>
+<button id="btn" type="submit">Isumite</button>
+<div id="msg" class="msg"></div>
+</form></div>
+<script src="config.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+function shrink(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>{const i=new Image();i.onload=()=>{const s=Math.min(1,360/Math.max(i.width,i.height)),c=document.createElement('canvas');c.width=i.width*s;c.height=i.height*s;c.getContext('2d').drawImage(i,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',.8))};i.onerror=rej;i.src=r.result};r.onerror=rej;r.readAsDataURL(file)})}
+$('photo').onchange=e=>{const f=e.target.files[0];if(!f)return;const u=URL.createObjectURL(f);$('prev').innerHTML='<img src="'+u+'">'};
+$('f').onsubmit=async e=>{e.preventDefault();const m=$('msg');m.className='msg';m.textContent='';$('btn').disabled=true;$('btn').textContent='Ipinapadala...';
+ try{if($('f').elements['bot-field'].value)return;const photo=await shrink($('photo').files[0]);
+  const r=await fetch(RB.url+'/rest/v1/registrations',{method:'POST',headers:{apikey:RB.key,Authorization:'Bearer '+RB.key,'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify({ign:$('ign').value.trim(),team:$('team').value.trim(),role:$('role').value,photo})});
+  if(!r.ok)throw Error('HTTP '+r.status);
+  $('f').reset();$('prev').textContent='IGN';m.className='msg ok';m.textContent='Salamat! Naipadala na ang registration mo. Hintayin ang approval ng organizer.'}
+ catch(err){m.className='msg err';m.textContent='Hindi naipadala. Subukan ulit.'}
+ $('btn').disabled=false;$('btn').textContent='Isumite'};
+</script></body></html>
