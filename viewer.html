@@ -7,9 +7,10 @@
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}html,body{margin:0}
 body{background:radial-gradient(ellipse at 85% -10%,#26385e 0,transparent 40%),var(--bg);color:var(--txt);font:15px/1.45 Inter,system-ui,Arial,sans-serif;max-width:480px;margin:0 auto;min-height:100vh;padding-bottom:calc(74px + env(safe-area-inset-bottom))}
 .hidden{display:none!important}button,input{font:inherit}
-.auth{padding:40px 22px}.eyebrow{color:var(--cyan);font-size:11px;font-weight:900;letter-spacing:2.5px}h1{margin:6px 0 4px;font-size:26px;line-height:1.1}.muted{color:var(--muted)}.small{font-size:12px}
-.card{background:linear-gradient(145deg,var(--panel),#111a2e);border:1px solid var(--line);border-radius:14px;padding:14px;margin:10px 0}
-label{display:block;font-size:12px;font-weight:700;color:var(--muted);margin:14px 0 5px}
+.auth{padding:30px 22px;text-align:center}.auth-logo{width:90px;height:90px;border-radius:20px;object-fit:cover;margin:0 auto 12px;border:2px solid var(--gold);box-shadow:0 8px 24px rgba(0,0,0,.4);display:block}
+.eyebrow{color:var(--cyan);font-size:11px;font-weight:900;letter-spacing:2.5px}h1{margin:6px 0 4px;font-size:26px;line-height:1.1}.muted{color:var(--muted)}.small{font-size:12px}
+.card{background:linear-gradient(145deg,var(--panel),#111a2e);border:1px solid var(--line);border-radius:14px;padding:14px;margin:10px 0;text-align:left}
+label{display:block;font-size:12px;font-weight:700;color:var(--muted);margin:14px 0 5px;text-align:left}
 input{width:100%;background:#0c1426;border:1px solid var(--line);border-radius:9px;padding:13px;color:var(--txt);outline:none}input:focus{border-color:var(--cyan)}
 .btn{width:100%;margin-top:18px;padding:14px;border:0;border-radius:10px;background:linear-gradient(135deg,#ffe16a,#f4a900);color:#141a2a;font-weight:900;cursor:pointer}
 .link{background:none;border:0;color:var(--cyan);margin-top:14px;padding:6px;cursor:pointer;width:100%}
@@ -34,6 +35,7 @@ nav button{background:none;border:0;color:var(--muted);padding:6px 0;font-size:1
 </style></head><body>
 
 <section id="auth" class="auth hidden">
+ <img src="Gemini_Generated_Image_lzvitjlzvitjlzvi.jpg" alt="Rosabaya Logo" class="auth-logo">
  <div class="eyebrow">ROSABAYA ML TOURNAMENT</div><h1 id="aTitle">Mag-login</h1>
  <p class="muted" id="aSub">Pangalan at password lang ang kailangan para makita ang schedule, standings, results, bracket at players.</p>
  <label for="nm">Pangalan</label><input id="nm" maxlength="28" autocomplete="username">
@@ -91,9 +93,16 @@ const nm=id=>team(id)?.name||'TBD';
 const fmtD=d=>new Date(d+'T00:00:00').toLocaleDateString('en-PH',{weekday:'long',month:'long',day:'numeric'});
 const fmtT=t=>{const[h,m]=t.split(':').map(Number);return(h%12||12)+':'+String(m).padStart(2,'0')+' '+(h<12?'AM':'PM')};
 const done=m=>m.a&&m.b&&m.winner;
-function matchCard(m,showScore){const w=m.winner;return`<div class="card"><div class="m-top"><span>${esc(m.label)}</span><span>BEST OF ${Number(m.bestOf||3)}</span></div>
- ${[['a','sa'],['b','sb']].map(([k,s])=>`<div class="row ${w&&w===m[k]?'w':''}">${logo(team(m[k]))}<div class="n">${esc(nm(m[k]))}</div>${showScore?`<div class="s">${esc(m[s]===''?0:m[s])}</div>`:''}</div>`).join('')}
- ${m.date&&m.time&&!showScore?`<div class="foot"><span>◷ ${fmtT(m.time)}</span><span>${fmtD(m.date)}</span></div>`:''}</div>`}
+
+function matchCard(m,showScore){
+ const w=m.winner;
+ return `<div class="card" style="${!showScore?'':'background:#ffffff;color:#111a2e;border-color:#d0d7de'}">
+  <div class="m-top" style="${!showScore?'':'color:#0969da'}"><span>${esc(m.label)}</span><span>BEST OF ${Number(m.bestOf||3)}</span></div>
+  ${[['a','sa'],['b','sb']].map(([k,s])=>`<div class="row ${w&&w===m[k]?'w':''}" style="${!showScore?'':(w&&w===m[k]?'color:#1a7f37;font-weight:bold':'')}">${logo(team(m[k]))}<div class="n">${esc(nm(m[k]))}</div>${showScore?`<div class="s" style="${w&&w===m[k]?'color:#1a7f37':''}">${esc(m[s]===''?0:m[s])}</div>`:''}</div>`).join('')}
+  ${m.date&&m.time&&!showScore?`<div class="foot"><span>◷ ${fmtT(m.time)}</span><span>${fmtD(m.date)}</span></div>`:''}
+  ${m.date&&showScore?`<div class="foot" style="${!showScore?'':'border-top-color:#d0d7de;color:#57606a'}"><span>◷ ${m.time?fmtT(m.time):''}</span><span>${fmtD(m.date)}</span></div>`:''}
+ </div>`;
+}
 
 const V={
  schedule(){const l=D.matches.filter(m=>m.date&&m.time&&!m.winner).sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));if(!l.length)return'<div class="empty">Wala pang naka-schedule na upcoming matches.</div>';
@@ -101,8 +110,13 @@ const V={
  standings(){const ms=D.matches.filter(done);if(!D.teams.length)return'<div class="empty">Wala pang teams.</div>';
   const st=D.teams.map(t=>{const p=ms.filter(m=>m.a===t.id||m.b===t.id),w=p.filter(m=>m.winner===t.id).length;const gw=p.reduce((n,m)=>n+(Number(m.a===t.id?m.sa:m.sb)||0),0),gl=p.reduce((n,m)=>n+(Number(m.a===t.id?m.sb:m.sa)||0),0);return{t,p:p.length,w,l:p.length-w,d:gw-gl,pts:w*3}}).sort((a,b)=>b.pts-a.pts||b.w-a.w||b.d-a.d||a.t.name.localeCompare(b.t.name));
   return`<div class="card"><table><thead><tr><th>#</th><th>TEAM</th><th>P</th><th>W</th><th>L</th><th>DIFF</th><th>PTS</th></tr></thead><tbody>${st.map((x,i)=>`<tr><td>${i+1}</td><td><div class="tm">${logo(x.t)}${esc(x.t.name)}</div></td><td>${x.p}</td><td>${x.w}</td><td>${x.l}</td><td>${x.d>0?'+':''}${x.d}</td><td class="pts">${x.pts}</td></tr>`).join('')}</tbody></table></div><p class="muted small">3 puntos sa bawat panalo.</p>`},
- results(){const l=D.matches.filter(done).reverse();return l.length?l.map(m=>matchCard(m,true)).join(''):'<div class="empty">Wala pang natapos na match.</div>'},
- bracket(){if(!D.matches.length)return'<div class="empty">Wala pang bracket.</div>';let out='',sec='',lab='';D.matches.forEach(m=>{if(m.section!==sec){out+=`<h2>${esc(m.section)}</h2>`;sec=m.section;lab=''}if(m.label!==lab&&D.matches.filter(x=>x.section===m.section).length>1){out+=`<div class="small muted" style="margin:10px 2px 0">${esc(m.label)}</div>`;lab=m.label}out+=matchCard(m,!!(m.a&&m.b&&(m.sa!==''||m.sb!=='')))});return out},
+ results(){const l=D.matches.filter(done).reverse();if(!l.length)return'<div class="empty">Wala pang natapos na match.</div>';
+  let out='',last='';l.forEach(m=>{if(m.date!==last){out+=`<h2>${esc(fmtD(m.date))}</h2>`;last=m.date}out+=matchCard(m,true)});return out},
+ bracket(){if(!D.matches.length)return'<div class="empty">Wala pang bracket.</div>';let out='',sec='',lab='';D.matches.forEach(m=>{if(m.section!==sec){out+=`<h2>${esc(m.section)}</h2>`;sec=m.section;lab=''}if(m.label!==lab&&D.matches.filter(x=>x.section===m.section).length>1){out+=`<div class="small muted" style="margin:10px 2px 0">${esc(m.label)}</div>`;lab=m.label}out+=`<div style="background:#ffffff;color:#111a2e;border:1px solid #d0d7de;border-radius:14px;padding:14px;margin:10px 0;text-align:left">
+  <div class="m-top" style="color:#0969da"><span>${esc(m.label)}</span><span>BEST OF ${Number(m.bestOf||3)}</span></div>
+  ${[['a','sa'],['b','sb']].map(([k,s])=>`<div class="row ${m.winner&&m.winner===m[k]?'w':''}" style="${m.winner&&m.winner===m[k]?'color:#1a7f37;font-weight:bold':''}">${logo(team(m[k]))}<div class="n">${esc(nm(m[k]))}</div><div class="s" style="${m.winner&&m.winner===m[k]?'color:#1a7f37':''}">${esc(m[s]===''?0:m[s])}</div></div>`).join('')}
+  ${m.date?`<div class="foot" style="border-top-color:#d0d7de;color:#57606a"><span>◷ ${m.time?fmtT(m.time):''}</span><span>${fmtD(m.date)}</span></div>`:''}
+ </div>`});return out},
  teams(){return D.teams.length?D.teams.map((t,i)=>`<div class="card"><button class="team-h" onclick="tg(${i})">${logo(t)}<div><strong>${esc(t.name)}</strong><small>Captain: ${esc(t.captain)} · ${t.players.length} players</small></div><span class="chev">${open[i]?'▲':'▼'}</span></button>${open[i]?`<div class="roster">${t.players.map((p,j)=>`<div class="pl" onclick="pp(${i},${j})">${p.photo?`<img class="ph" src="${p.photo}" alt="">`:`<div class="ph">${esc(p.name.slice(0,1).toUpperCase())}</div>`}<b>${esc(p.name)}</b><span class="role">${esc(p.role||'Flex')}</span></div>`).join('')}</div>`:''}</div>`).join(''):'<div class="empty">Wala pang teams.</div>'}
 };
 function render(){document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===tab));
