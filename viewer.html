@@ -152,7 +152,7 @@ nav button{background:none;border:0;color:var(--muted);padding:6px 0;font-size:1
  let finished=false,guard,started=false;
  bg.pause();bg.removeAttribute('autoplay');
  function end(){if(finished)return;finished=true;clearTimeout(guard);try{v.pause();bg.pause()}catch(e){}box.classList.add('out');setTimeout(()=>box.remove(),800)}
- const HOLD=3000; /* ms to keep the last scene on screen so it can be read */
+ const HOLD=1000; /* ms to keep the last scene on screen so it can be read */
  let over=false;
  v.addEventListener('error',end);
  v.addEventListener('ended',()=>{over=true;clearTimeout(guard);guard=setTimeout(end,HOLD)});
