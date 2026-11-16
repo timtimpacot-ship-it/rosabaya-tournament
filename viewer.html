@@ -101,6 +101,10 @@ nav button{background:none;border:0;color:var(--muted);padding:6px 0;font-size:1
  nav button.on{border-bottom-color:var(--gold)}
 }
 
+/* OFFLINE NOTICE */
+.offbar{background:#7a1f2b;color:#fff;text-align:center;font-size:12px;font-weight:700;padding:calc(7px + env(safe-area-inset-top)) 12px 7px}
+.offbox{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:24px 20px;max-width:340px;width:100%}
+.offbox h3{margin:8px 0 6px;font-size:19px}.offbox p{margin:0 0 4px;font-size:14px}
 /* REGISTER (merged from register.html) */
 select{width:100%;background:#0c1426;border:1px solid var(--line);border-radius:9px;padding:13px;color:var(--txt);outline:none;font:inherit}select:focus{border-color:var(--cyan)}
 .btn:disabled{opacity:.6}.hp{display:none!important}
@@ -135,6 +139,7 @@ select{width:100%;background:#0c1426;border:1px solid var(--line);border-radius:
  <button id="introSnd" class="hidden">🔊 Sound</button>
 </div>
 
+<div id="offBar" class="offbar hidden"></div>
 <section id="auth" class="auth hidden">
  <img src="Gemini_Generated_Image_lzvitjlzvitjlzvi.jpg" alt="Rosabaya Logo" class="auth-logo">
  <div class="eyebrow">ROSABAYA ML TOURNAMENT</div><h1 id="aTitle">Mag-login</h1>
@@ -159,6 +164,7 @@ select{width:100%;background:#0c1426;border:1px solid var(--line);border-radius:
  <nav id="nav"></nav>
  <main id="view"></main>
 </div>
+<div id="offAlert" class="modal hidden"><div class="offbox"><div style="font-size:44px">📡</div><h3>Walang internet connection</h3><p class="muted">Offline ka ngayon. Kailangan ng internet para mag-login at makita ang schedule, standings at results. I-connect muna ang data o Wi-Fi mo, tapos subukan ulit.</p><button class="btn" id="offOk">OK</button></div></div>
 <div id="modal" class="modal hidden"></div>
 
 <script>
@@ -168,7 +174,7 @@ select{width:100%;background:#0c1426;border:1px solid var(--line);border-radius:
   lw=document.getElementById('introLogoWrap'),snd=document.getElementById('introSnd');
  let finished=false,guard,started=false;
  bg.pause();bg.removeAttribute('autoplay');
- function end(){if(finished)return;finished=true;clearTimeout(guard);try{v.pause();bg.pause()}catch(e){}box.classList.add('out');setTimeout(()=>box.remove(),800)}
+ function end(){if(finished)return;finished=true;clearTimeout(guard);try{v.pause();bg.pause()}catch(e){}box.classList.add('out');setTimeout(()=>{box.remove();window.afterIntro&&window.afterIntro()},800)}
  const HOLD=1000; /* ms to keep the last scene on screen so it can be read */
  let over=false;
  v.addEventListener('error',end);
@@ -210,15 +216,16 @@ async function token(){if(!sess)throw Error('nologin');if(Date.now()>sess.exp-60
 
 $('sw').onclick=()=>{mode=mode==='login'?'signup':'login';const s=mode==='signup';$('aTitle').textContent=s?'Gumawa ng account':'Mag-login';$('go').textContent=s?'Mag-sign up':'Mag-login';$('sw').textContent=s?'May account na? Mag-login':'Wala pang account? Mag-sign up';$('err').textContent=''};
 $('go').onclick=async()=>{const name=$('nm').value.trim(),pw=$('pw').value;$('err').textContent='';
+ if(!navigator.onLine){$('err').textContent='Walang internet connection. I-connect muna ang data o Wi-Fi mo.';return}
  if(!name){$('err').textContent='Ilagay ang pangalan.';return}if(pw.length<6){$('err').textContent='Hindi bababa sa 6 na character ang password.';return}
  $('go').disabled=true;
  try{const email=await emailFor(name);let j;
   if(mode==='signup'){j=await authCall('/signup',{email,password:pw,data:{name}});if(!j.access_token)throw Error('NOCONFIRM')}
   else j=await authCall('/token?grant_type=password',{email,password:pw});
   saveSess(j,name);start()}
- catch(e){const m=e.message;$('err').textContent=/already|registered/i.test(m)?'May gumagamit na ng pangalang iyan. Dagdagan ng apelyido o numero.':/invalid login/i.test(m)?'Mali ang pangalan o password.':m==='NOCONFIRM'?'Hindi pa naka-off ang email confirmation sa Supabase. Sabihan ang organizer.':m;}
+ catch(e){const m=e.message;$('err').textContent=(!navigator.onLine||/failed to fetch|networkerror|load failed/i.test(m))?'Walang internet connection. I-connect muna ang data o Wi-Fi mo.':/already|registered/i.test(m)?'May gumagamit na ng pangalang iyan. Dagdagan ng apelyido o numero.':/invalid login/i.test(m)?'Mali ang pangalan o password.':m==='NOCONFIRM'?'Hindi pa naka-off ang email confirmation sa Supabase. Sabihan ang organizer.':m;}
  $('go').disabled=false};
-$('lo').onclick=()=>{localStorage.removeItem(KEY);sess=null;D=null;$('view').innerHTML='';$('app').classList.add('hidden');$('auth').classList.remove('hidden')};
+$('lo').onclick=()=>{localStorage.removeItem(KEY);sess=null;D=null;$('view').innerHTML='';$('app').classList.add('hidden');$('auth').classList.remove('hidden');checkOff(true)};
 $('rf').onclick=()=>{if(tab!=='register')load()};
 
 async function load(){$('view').innerHTML='<div class="empty">Loading...</div>';
@@ -352,19 +359,37 @@ function bindReg(root){
    const r=await fetch(RB.url+'/rest/v1/registrations',{method:'POST',headers:{apikey:RB.key,Authorization:'Bearer '+RB.key,'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify({ign:f.elements['ign'].value.trim(),team:f.elements['team'].value.trim(),role:f.elements['role'].value,photo})});
    if(!r.ok)throw Error('HTTP '+r.status);
    f.reset();prev.textContent='IGN';m.className='reg-msg ok';m.textContent='Salamat! Naipadala na ang registration mo. Hintayin ang approval ng organizer.'}
-  catch(err){m.className='reg-msg err';m.textContent='Hindi naipadala. Subukan ulit.'}
+  catch(err){m.className='reg-msg err';m.textContent=navigator.onLine?'Hindi naipadala. Subukan ulit.':'Walang internet connection. Subukan ulit pag online na.'}
   btn.disabled=false;btn.textContent='Isumite'}}
-$('goReg').onclick=()=>{$('auth').classList.add('hidden');$('regPub').classList.remove('hidden');$('regPubBody').innerHTML=regForm();bindReg($('regPubBody'));scrollTo(0,0)};
-$('regBack').onclick=()=>{$('regPub').classList.add('hidden');$('regPubBody').innerHTML='';$('auth').classList.remove('hidden')};
+$('goReg').onclick=()=>{$('auth').classList.add('hidden');$('regPub').classList.remove('hidden');$('regPubBody').innerHTML=regForm();bindReg($('regPubBody'));scrollTo(0,0);checkOff(true)};
+$('regBack').onclick=()=>{$('regPub').classList.add('hidden');$('regPubBody').innerHTML='';$('auth').classList.remove('hidden');checkOff(true)};
 
 function render(){document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===tab));
  if(tab==='register'){$('view').innerHTML='<div class="card reg-wrap">'+regForm()+'</div>';bindReg($('view'));return}
- if(!D){$('view').innerHTML='<div class="empty">Wala pang na-publish na data. Subukan ulit mamaya.</div>';return}
+ if(!D){$('view').innerHTML='<div class="empty">'+(navigator.onLine?'Wala pang na-publish na data. Subukan ulit mamaya.':'Walang internet connection. Subukan ulit pag online na.')+'</div>';return}
  $('ev').textContent=(D.eventName||'Rosabaya ML Tournament');
  $('view').innerHTML=V[tab]()+(D._at?`<p class="muted small" style="text-align:center;margin-top:22px">Huling update: ${new Date(D._at).toLocaleString('en-PH',{dateStyle:'medium',timeStyle:'short'})}</p>`:'')}
 function tg(i){open[i]=!open[i];render()}
 function pp(i,j){const p=D.teams[i].players[j];$('modal').innerHTML=`${p.photo?`<div><img src="${p.photo}" alt=""><h3>${esc(p.name)}</h3><span class="role">${esc(p.role||'Flex')}</span><p class="muted small">${esc(D.teams[i].name)}</p></div>`:`<div><div class="big">${esc(p.name.slice(0,1).toUpperCase())}</div><h3>${esc(p.name)}</h3><span class="role">${esc(p.role||'Flex')}</span></div>`}`;$('modal').classList.remove('hidden')}
 $('modal').onclick=()=>$('modal').classList.add('hidden');
 
+/* OFFLINE: banner + popup once the person is on the login form */
+let offShown=false;
+const onAuthScreen=()=>!$('auth').classList.contains('hidden')||!$('regPub').classList.contains('hidden');
+function checkOff(popup){
+ const off=!navigator.onLine,bar=$('offBar');
+ bar.classList.toggle('hidden',!off);
+ if(!off){offShown=false;$('offAlert').classList.add('hidden');return}
+ bar.textContent=onAuthScreen()?'⚠️ Walang internet connection — kailangan ng internet para mag-login.':'⚠️ Walang internet connection.';
+ if(popup&&onAuthScreen()&&!document.getElementById('intro')&&!offShown){offShown=true;$('offAlert').classList.remove('hidden')}
+}
+$('offOk').onclick=()=>$('offAlert').classList.add('hidden');
+addEventListener('offline',()=>checkOff(true));
+addEventListener('online',()=>checkOff(false));
+window.afterIntro=()=>checkOff(true);
+/* keep the page + intro video on the phone so it opens offline (needs https; first visit must be online) */
+if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol))navigator.serviceWorker.register('sw.js').catch(()=>{});
+
 if(sess)start();else $('auth').classList.remove('hidden');
+checkOff(true);
 </script></body></html>
