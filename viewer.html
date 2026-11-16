@@ -80,7 +80,7 @@ td .tm{display:flex;align-items:center;gap:10px;font-weight:700}.pts{color:var(-
 .team-h{display:flex;align-items:center;gap:12px;width:100%;background:none;border:0;color:inherit;text-align:left;padding:0;cursor:pointer}.team-h .lg{width:46px;height:46px}.team-h strong{display:block;font-size:15px}.team-h small{color:var(--muted)}.chev{margin-left:auto;color:var(--muted)}
 .roster{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;margin-top:14px}.pl{background:#0c1426;border:1px solid #293b5a;border-radius:11px;padding:12px 8px;text-align:center;cursor:pointer;transition:.15s}.pl:hover{border-color:var(--cyan)}
 .pl .ph{width:72px;height:72px;border-radius:50%;object-fit:cover;margin:0 auto 6px;display:grid;place-items:center;background:#304466;color:var(--gold);font-weight:900;font-size:22px}.pl b{display:block;overflow-wrap:anywhere;font-size:13px}.role{display:inline-block;margin-top:4px;background:#283b5e;color:var(--cyan);border-radius:20px;padding:2px 8px;font-size:10px;font-weight:800}
-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:960px;display:grid;grid-template-columns:repeat(5,1fr);background:#0b1020f5;border-top:1px solid var(--line);padding:6px 4px calc(6px + env(safe-area-inset-bottom));z-index:6}
+nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:960px;display:grid;grid-template-columns:repeat(6,1fr);background:#0b1020f5;border-top:1px solid var(--line);padding:6px 4px calc(6px + env(safe-area-inset-bottom));z-index:6}
 nav button{background:none;border:0;color:var(--muted);padding:6px 0;font-size:11px;font-weight:700;cursor:pointer;transition:.15s}nav button span{display:block;font-size:20px;line-height:1.2}nav button.on{color:var(--gold)}nav button:hover{color:var(--txt)}
 .modal{position:fixed;inset:0;background:#000d;z-index:20;display:grid;place-items:center;padding:20px;text-align:center}.modal img{max-width:100%;max-height:68vh;border-radius:14px}.modal .big{width:200px;height:200px;border-radius:50%;background:#304466;display:grid;place-items:center;font-size:70px;color:var(--gold);margin:auto}.modal h3{margin:14px 0 4px;font-size:22px}
 
@@ -101,7 +101,16 @@ nav button{background:none;border:0;color:var(--muted);padding:6px 0;font-size:1
  nav button.on{border-bottom-color:var(--gold)}
 }
 
-/* INTRO: logo first, then video */
+/* REGISTER (merged from register.html) */
+select{width:100%;background:#0c1426;border:1px solid var(--line);border-radius:9px;padding:13px;color:var(--txt);outline:none;font:inherit}select:focus{border-color:var(--cyan)}
+.btn:disabled{opacity:.6}.hp{display:none!important}
+.reg-wrap{max-width:460px;margin:14px auto 0;padding:22px}
+.reg-pic{display:flex;align-items:center;gap:14px}
+.reg-prev{width:84px;height:84px;flex:none;border-radius:50%;background:#304466;display:grid;place-items:center;color:var(--gold);font-weight:800;overflow:hidden;border:2px solid var(--line)}.reg-prev img{width:100%;height:100%;object-fit:cover}
+.reg-msg{margin-top:14px;padding:11px 13px;border-radius:9px;font-size:13px;display:none;text-align:left}.reg-msg.ok{display:block;background:#0f2e24;color:var(--green)}.reg-msg.err{display:block;background:#3a1a24;color:var(--red)}
+.reg-form h1{text-align:left}.reg-form p.muted{text-align:left;margin:0 0 6px}
+
+/* INTRO */
 #intro{position:fixed;left:0;top:0;right:0;bottom:0;width:100%;height:100vh;height:100dvh;z-index:100;background:#05070f;overflow:hidden;transition:opacity .7s ease;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 #intro.out{opacity:0;pointer-events:none}
 #intro video{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;opacity:0;visibility:hidden;transition:opacity .6s ease;background:transparent}
@@ -135,6 +144,14 @@ nav button{background:none;border:0;color:var(--muted);padding:6px 0;font-size:1
  <div class="err" id="err"></div>
  <button class="btn" id="go">Mag-login</button>
  <button class="link" id="sw">Wala pang account? Mag-sign up</button>
+ <button class="link" id="goReg" style="border-top:1px solid var(--line);border-radius:0;margin-top:10px;padding-top:16px">📝 Mag-register bilang Player</button>
+</section>
+
+<section id="regPub" class="auth hidden">
+ <img src="Gemini_Generated_Image_lzvitjlzvitjlzvi.jpg" alt="Rosabaya Logo" class="auth-logo">
+ <div class="eyebrow">ROSABAYA ML TOURNAMENT</div>
+ <div id="regPubBody"></div>
+ <button class="link" id="regBack">← Bumalik sa Login</button>
 </section>
 
 <div id="app" class="hidden">
@@ -166,7 +183,7 @@ nav button{background:none;border:0;color:var(--muted);padding:6px 0;font-size:1
  snd.onclick=()=>{v.muted=false;v.play().catch(()=>{});snd.classList.add('hidden')};
  function startVideo(){
   if(started||finished)return;started=true;
-  guard=setTimeout(end,7000); /* video can't start: just open the app */
+  guard=setTimeout(end,25000); /* video can't start (slow/missing): just open the app */
   v.muted=false;
   v.play().catch(()=>{v.muted=true;v.play().then(()=>snd.classList.remove('hidden')).catch(end)});
  }
@@ -184,7 +201,7 @@ const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,
 const AU=RB.url+'/auth/v1',KEY='rb_viewer';
 let sess=null,D=null,mode='login',tab='schedule',open={};
 try{sess=JSON.parse(localStorage.getItem(KEY))}catch(e){}
-const TABS=[['schedule','📅','Schedule'],['standings','🏆','Standings'],['results','✅','Results'],['bracket','🧩','Bracket'],['teams','👥','Teams']];
+const TABS=[['schedule','📅','Schedule'],['standings','🏆','Standings'],['results','✅','Results'],['bracket','🧩','Bracket'],['teams','👥','Teams'],['register','📝','Register']];
 
 async function emailFor(n){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(n.trim().toLowerCase().replace(/\s+/g,' ')));return[...new Uint8Array(b)].slice(0,20).map(x=>x.toString(16).padStart(2,'0')).join('')+'@viewers.rosabaya.app'}
 async function authCall(path,body){const r=await fetch(AU+path,{method:'POST',headers:{apikey:RB.key,'Content-Type':'application/json'},body:JSON.stringify(body)});const j=await r.json().catch(()=>({}));if(!r.ok)throw Error(j.msg||j.error_description||j.message||'Error '+r.status);return j}
@@ -201,8 +218,8 @@ $('go').onclick=async()=>{const name=$('nm').value.trim(),pw=$('pw').value;$('er
   saveSess(j,name);start()}
  catch(e){const m=e.message;$('err').textContent=/already|registered/i.test(m)?'May gumagamit na ng pangalang iyan. Dagdagan ng apelyido o numero.':/invalid login/i.test(m)?'Mali ang pangalan o password.':m==='NOCONFIRM'?'Hindi pa naka-off ang email confirmation sa Supabase. Sabihan ang organizer.':m;}
  $('go').disabled=false};
-$('lo').onclick=()=>{localStorage.removeItem(KEY);sess=null;D=null;$('app').classList.add('hidden');$('auth').classList.remove('hidden')};
-$('rf').onclick=()=>load();
+$('lo').onclick=()=>{localStorage.removeItem(KEY);sess=null;D=null;$('view').innerHTML='';$('app').classList.add('hidden');$('auth').classList.remove('hidden')};
+$('rf').onclick=()=>{if(tab!=='register')load()};
 
 async function load(){$('view').innerHTML='<div class="empty">Loading...</div>';
  try{const t=await token();const r=await fetch(RB.url+'/rest/v1/published?id=eq.1&select=data,updated_at',{headers:{apikey:RB.key,Authorization:'Bearer '+t}});
@@ -211,7 +228,7 @@ async function load(){$('view').innerHTML='<div class="empty">Loading...</div>';
  render()}
 function start(){$('auth').classList.add('hidden');$('app').classList.remove('hidden');$('hi').textContent='Hi, '+(sess.name||'viewer');
  $('nav').innerHTML=TABS.map(t=>`<button data-t="${t[0]}"><span>${t[1]}</span>${t[2]}</button>`).join('');
- $('nav').onclick=e=>{const b=e.target.closest('button');if(b){tab=b.dataset.t;render();scrollTo(0,0)}};load()}
+ $('nav').onclick=e=>{const b=e.target.closest('button');if(b){if(b.dataset.t===tab&&tab==='register')return;tab=b.dataset.t;render();scrollTo(0,0)}};load()}
 
 const team=id=>(D.teams||[]).find(t=>t.id===id);
 const logo=t=>`<span class="lg">${t&&t.logo?`<img src="${t.logo}" alt="">`:esc((t?.name||'TBD').slice(0,2).toUpperCase())}</span>`;
@@ -307,7 +324,41 @@ const V={
   return (D.teams||[]).length?`<div class="grid brk-grid" style="margin-top:14px">`+D.teams.map((t,i)=>`<div class="card"><button class="team-h" onclick="tg(${i})">${logo(t)}<div><strong>${esc(t.name)}</strong><small>Captain: ${esc(t.captain)} · ${t.players.length} players</small></div><span class="chev">${open[i]?'▲':'▼'}</span></button>${open[i]?`<div class="roster">${t.players.map((p,j)=>`<div class="pl" onclick="pp(${i},${j})">${p.photo?`<img class="ph" src="${p.photo}" alt="">`:`<div class="ph">${esc(p.name.slice(0,1).toUpperCase())}</div>`}<b>${esc(p.name)}</b><span class="role">${esc(p.role||'Flex')}</span></div>`).join('')}</div>`:''}</div>`).join('')+`</div>`:'<div class="empty">Wala pang teams.</div>';
  }
 };
+/* REGISTER: one form, used in the "Register" tab and on the login screen */
+function regForm(){
+ const tl=((D&&D.teams)||[]).map(t=>`<option value="${esc(t.name)}">`).join('');
+ return `<form class="reg-form" autocomplete="off">
+  <div class="eyebrow">PLAYER REGISTRATION</div><h1>Mag-register</h1>
+  <p class="muted">Punan ang details mo para mapasama ka sa roster ng team mo.</p>
+  <p class="hp"><label>Huwag punan: <input name="bot-field" tabindex="-1"></label></p>
+  <label>IGN (In-Game Name)</label><input name="ign" required maxlength="40" autocomplete="off">
+  <label>Team</label><input name="team" required maxlength="60" autocomplete="off" list="rbTeams" placeholder="Eksaktong pangalan ng team mo"><datalist id="rbTeams">${tl}</datalist>
+  <label>Role</label>
+  <select name="role" required><option value="">Pumili ng role</option><option>Tank</option><option>Fighter</option><option>Core</option><option>Mage</option><option>Marksman</option><option>Flex</option></select>
+  <label>Profile picture</label>
+  <div class="reg-pic"><div class="reg-prev">IGN</div><input name="photo" type="file" accept="image/*" required></div>
+  <button class="btn" type="submit">Isumite</button>
+  <div class="reg-msg"></div>
+ </form>`}
+function shrink(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>{const i=new Image();i.onload=()=>{const k=Math.min(1,360/Math.max(i.width,i.height)),c=document.createElement('canvas');c.width=i.width*k;c.height=i.height*k;c.getContext('2d').drawImage(i,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',.8))};i.onerror=rej;i.src=r.result};r.onerror=rej;r.readAsDataURL(file)})}
+function bindReg(root){
+ const f=root.querySelector('.reg-form');if(!f)return;
+ const prev=f.querySelector('.reg-prev'),m=f.querySelector('.reg-msg'),btn=f.querySelector('button[type=submit]'),ph=f.elements['photo'];
+ ph.onchange=()=>{const x=ph.files[0];if(!x)return;const im=new Image();im.src=URL.createObjectURL(x);prev.textContent='';prev.appendChild(im)};
+ f.onsubmit=async e=>{e.preventDefault();m.className='reg-msg';m.textContent='';
+  if(f.elements['bot-field'].value)return;
+  btn.disabled=true;btn.textContent='Ipinapadala...';
+  try{const photo=await shrink(ph.files[0]);
+   const r=await fetch(RB.url+'/rest/v1/registrations',{method:'POST',headers:{apikey:RB.key,Authorization:'Bearer '+RB.key,'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify({ign:f.elements['ign'].value.trim(),team:f.elements['team'].value.trim(),role:f.elements['role'].value,photo})});
+   if(!r.ok)throw Error('HTTP '+r.status);
+   f.reset();prev.textContent='IGN';m.className='reg-msg ok';m.textContent='Salamat! Naipadala na ang registration mo. Hintayin ang approval ng organizer.'}
+  catch(err){m.className='reg-msg err';m.textContent='Hindi naipadala. Subukan ulit.'}
+  btn.disabled=false;btn.textContent='Isumite'}}
+$('goReg').onclick=()=>{$('auth').classList.add('hidden');$('regPub').classList.remove('hidden');$('regPubBody').innerHTML=regForm();bindReg($('regPubBody'));scrollTo(0,0)};
+$('regBack').onclick=()=>{$('regPub').classList.add('hidden');$('regPubBody').innerHTML='';$('auth').classList.remove('hidden')};
+
 function render(){document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===tab));
+ if(tab==='register'){$('view').innerHTML='<div class="card reg-wrap">'+regForm()+'</div>';bindReg($('view'));return}
  if(!D){$('view').innerHTML='<div class="empty">Wala pang na-publish na data. Subukan ulit mamaya.</div>';return}
  $('ev').textContent=(D.eventName||'Rosabaya ML Tournament');
  $('view').innerHTML=V[tab]()+(D._at?`<p class="muted small" style="text-align:center;margin-top:22px">Huling update: ${new Date(D._at).toLocaleString('en-PH',{dateStyle:'medium',timeStyle:'short'})}</p>`:'')}
