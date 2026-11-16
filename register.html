@@ -12,7 +12,26 @@ input,select{width:100%;background:#0c1426;border:1px solid var(--line);border-r
 button{width:100%;margin-top:22px;padding:14px;border:0;border-radius:10px;background:linear-gradient(135deg,#ffe16a,#f4a900);color:#141a2a;font:inherit;font-weight:900;cursor:pointer}button:disabled{opacity:.6}
 .msg{margin-top:14px;padding:11px 13px;border-radius:9px;font-size:13px;display:none}.msg.ok{display:block;background:#0f2e24;color:var(--green)}.msg.err{display:block;background:#3a1a24;color:var(--red)}
 .hp{display:none}
+
+/* INTRO: video first */
+#intro{position:fixed;left:0;top:0;right:0;bottom:0;width:100%;height:100vh;height:100dvh;z-index:100;background:#05070f;overflow:hidden;transition:opacity .7s ease;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+#intro.out{opacity:0;pointer-events:none}
+#intro video{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;opacity:0;visibility:hidden;transition:opacity .6s ease;background:transparent}
+#intro video.show{opacity:1;visibility:visible}
+#introBg{object-fit:cover;filter:blur(28px) brightness(.8) saturate(1.2);transform:scale(1.25)}
+#introV{object-fit:contain;object-position:center center;
+ -webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 3%,#000 97%,transparent 100%);mask-image:linear-gradient(to bottom,transparent 0,#000 3%,#000 97%,transparent 100%)}
+#intro video::-webkit-media-controls,#intro video::-webkit-media-controls-start-playback-button,#intro video::-webkit-media-controls-panel,#intro video::-webkit-media-controls-overlay-play-button{display:none!important;-webkit-appearance:none;opacity:0!important}
+#intro button{position:absolute;z-index:4;background:rgba(0,0,0,.35);color:#ffe9a8;border:1px solid rgba(255,200,87,.45);border-radius:20px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;backdrop-filter:blur(6px);opacity:.85}
+#introSnd{left:14px;top:calc(12px + env(safe-area-inset-top))}
+#intro .hidden{display:none}
 </style></head><body>
+<div id="intro">
+ <video id="introBg" src="Heroes_Intro3.mp4" muted autoplay playsinline webkit-playsinline preload="auto" disablePictureInPicture tabindex="-1"></video>
+ <video id="introV" src="Heroes_Intro3.mp4" playsinline webkit-playsinline preload="auto" disablePictureInPicture controlsList="nodownload nofullscreen noremoteplayback" oncontextmenu="return false" tabindex="-1"></video>
+ <button id="introSnd" class="hidden">🔊 Sound</button>
+</div>
+
 <div class="box">
 <div class="eyebrow">ROSABAYA ML TOURNAMENT</div><h1>Player Registration</h1><p>Punan ang details mo para mapasama ka sa roster ng team mo.</p>
 <form id="f" name="player-registration">
@@ -26,6 +45,35 @@ button{width:100%;margin-top:22px;padding:14px;border:0;border-radius:10px;backg
 <button id="btn" type="submit">Isumite</button>
 <div id="msg" class="msg"></div>
 </form></div>
+<script>
+/* INTRO: video plays right away, then fades into the app */
+(function(){
+ const box=document.getElementById('intro'),v=document.getElementById('introV'),bg=document.getElementById('introBg'),
+  snd=document.getElementById('introSnd');
+ let finished=false,guard,started=false;
+ bg.pause();bg.removeAttribute('autoplay');
+ function end(){if(finished)return;finished=true;clearTimeout(guard);try{v.pause();bg.pause()}catch(e){}box.classList.add('out');setTimeout(()=>box.remove(),800)}
+ const HOLD=1000; /* ms to keep the last scene on screen so it can be read */
+ let over=false;
+ v.addEventListener('error',end);
+ v.addEventListener('ended',()=>{over=true;clearTimeout(guard);guard=setTimeout(end,HOLD)});
+ v.addEventListener('playing',()=>{
+  clearTimeout(guard);guard=setTimeout(end,((v.duration||10)+HOLD/1000+4)*1000);
+  v.classList.add('show');bg.classList.add('show');
+  try{bg.currentTime=v.currentTime;bg.play().catch(()=>{})}catch(e){}
+ });
+ v.addEventListener('pause',()=>{if(!finished&&!over&&!v.ended&&!(v.duration&&v.currentTime>=v.duration-0.15))v.play().catch(()=>{})});
+ snd.onclick=()=>{v.muted=false;v.play().catch(()=>{});snd.classList.add('hidden')};
+ function startVideo(){
+  if(started||finished)return;started=true;
+  guard=setTimeout(end,7000); /* video can't start: just open the app */
+  v.muted=false;
+  v.play().catch(()=>{v.muted=true;v.play().then(()=>snd.classList.remove('hidden')).catch(end)});
+ }
+ /* go straight to the video */
+ startVideo();
+})();
+</script>
 <script src="config.js"></script>
 <script>
 const $=id=>document.getElementById(id);
