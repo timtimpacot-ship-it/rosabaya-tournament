@@ -25,6 +25,7 @@ button{width:100%;margin-top:22px;padding:14px;border:0;border-radius:10px;backg
 #intro button{position:absolute;z-index:4;background:rgba(0,0,0,.35);color:#ffe9a8;border:1px solid rgba(255,200,87,.45);border-radius:20px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;backdrop-filter:blur(6px);opacity:.85}
 #introSnd{left:14px;top:calc(12px + env(safe-area-inset-top))}
 #intro .hidden{display:none}
+#intro button{width:auto;margin:0}
 </style></head><body>
 <div id="intro">
  <video id="introBg" src="Heroes_Intro3.mp4" muted autoplay playsinline webkit-playsinline preload="auto" disablePictureInPicture tabindex="-1"></video>
@@ -66,7 +67,7 @@ button{width:100%;margin-top:22px;padding:14px;border:0;border-radius:10px;backg
  snd.onclick=()=>{v.muted=false;v.play().catch(()=>{});snd.classList.add('hidden')};
  function startVideo(){
   if(started||finished)return;started=true;
-  guard=setTimeout(end,7000); /* video can't start: just open the app */
+  guard=setTimeout(end,25000); /* video can't start (slow/missing): just open the app */
   v.muted=false;
   v.play().catch(()=>{v.muted=true;v.play().then(()=>snd.classList.remove('hidden')).catch(end)});
  }
