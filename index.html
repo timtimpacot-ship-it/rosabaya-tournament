@@ -378,9 +378,11 @@ header{display:none!important}main.wrap{width:auto!important;max-width:none!impo
  <div class="card"><h2>Viewer QR Code</h2><div class="row" style="justify-content:flex-start;gap:20px;align-items:flex-start"><div id="viewQR" style="background:#fff;padding:12px;border-radius:12px"></div><div><div class="smalltext" id="viewUrl" style="word-break:break-all;margin-bottom:10px"></div><button class="btn small" onclick="downloadViewQR()">Download QR (PNG)</button></div></div></div>
 </section>
  <section id="registrations" class="page hidden">
- <div class="hero"><div><div class="eyebrow">PLAYER SELF-REGISTRATION</div><h1>Player Registrations</h1><p>I-scan ng players ang QR code para ipasok ang IGN, picture, team at role nila.</p></div><span class="pill" id="regCount">0 pending</span></div>
- <div class="card"><h2>QR Code</h2><div class="row" style="justify-content:flex-start;gap:20px;align-items:flex-start"><div id="regQR" style="background:#fff;padding:12px;border-radius:12px"></div><div><div class="smalltext" id="regUrl" style="word-break:break-all;margin-bottom:10px"></div><button class="btn small" onclick="downloadRegQR()">Download QR (PNG)</button></div></div></div>
- <div class="card"><div class="row"><h2>Pending submissions</h2><button class="btn secondary small" onclick="loadRegs()">Refresh</button></div><div id="regList"><div class="empty">Pindutin ang Refresh.</div></div></div>
+ <div class="hero"><div><div class="eyebrow">PLAYER SELF-REGISTRATION</div><h1>Player Registrations</h1><p>I-scan ng players at captains ang QR code para mag-register ng player (IGN, picture, team, role) o ng team (team name, captain, optional logo).</p></div><span class="pill" id="regCount">0 pending</span></div>
+<div class="card"><h2>Player Registration QR</h2><div class="smalltext" style="margin-bottom:10px">Para sa players: pipili ng team, maglalagay ng IGN, role at picture.</div><div class="row" style="justify-content:flex-start;gap:20px;align-items:flex-start"><div id="regQR" style="background:#fff;padding:12px;border-radius:12px"></div><div><div class="smalltext" id="regUrl" style="word-break:break-all;margin-bottom:10px"></div><button class="btn small" onclick="downloadRegQR()">Download QR (PNG)</button></div></div></div>
+ <div class="card"><h2>Team Registration QR</h2><div class="smalltext" style="margin-bottom:10px">Para sa captains: team name, captain name at optional team logo.</div><div class="row" style="justify-content:flex-start;gap:20px;align-items:flex-start"><div id="regQR2" style="background:#fff;padding:12px;border-radius:12px"></div><div><div class="smalltext" id="regUrl2" style="word-break:break-all;margin-bottom:10px"></div><button class="btn small" onclick="downloadTeamQR()">Download QR (PNG)</button></div></div></div>
+<div class="card"><div class="row"><h2>Pending submissions</h2><button class="btn secondary small" onclick="loadRegs()">Refresh</button></div><div id="regList"><div class="empty">Pindutin ang Refresh.</div></div></div>
+ <div class="card"><div class="row"><h2>Pending team submissions</h2><span class="pill" id="teamRegCount">0 pending</span><button class="btn secondary small" onclick="loadRegs()">Refresh</button></div><div id="teamRegList"><div class="empty">Pindutin ang Refresh.</div></div></div>
 </section>
  <section id="gallery" class="page hidden">
  <div class="hero"><div><div class="eyebrow">TEAM LINEUPS & PLAYER PROFILES</div><h1>Team Player Gallery</h1><p>Malalaking player pictures, IGN at assigned Mobile Legends role bawat team.</p></div><span class="pill" id="galleryTeamCount">0 teams</span></div>
@@ -830,17 +832,21 @@ load();if(sessionStorage.getItem('rosabayaAdmin')==='yes'){$('loginScreen').clas
 <script>
 (function(){
  const _show=showTab;showTab=function(id){_show(id);if(id==='registrations'){drawRegQR();loadRegs()}};
- let qr=null,regs=[];
- const url=()=>new URL('register.html',location.href).href;
+ let qr=null,qr2=null,regs=[],teamRegs=[];
+ const url=()=>new URL('viewer.html#register',location.href).href,url2=()=>new URL('viewer.html#team',location.href).href;
  const rpc=(fn,body)=>fetch(RB.url+'/rest/v1/rpc/'+fn,{method:'POST',headers:{apikey:RB.key,Authorization:'Bearer '+RB.key,'Content-Type':'application/json'},body:JSON.stringify(body)}).then(async r=>{const j=await r.json().catch(()=>null);if(!r.ok)throw Error((j&&j.message)||r.status);return j});
- window.drawRegQR=function(){$('regUrl').textContent=url();if(qr||!window.QRCode)return;qr=new QRCode($('regQR'),{text:url(),width:220,height:220,correctLevel:QRCode.CorrectLevel.M})};
+window.drawRegQR=function(){$('regUrl').textContent=url();$('regUrl2').textContent=url2();if(!window.QRCode)return;if(!qr)qr=new QRCode($('regQR'),{text:url(),width:220,height:220,correctLevel:QRCode.CorrectLevel.M});if(!qr2)qr2=new QRCode($('regQR2'),{text:url2(),width:220,height:220,correctLevel:QRCode.CorrectLevel.M})};
+  window.downloadTeamQR=function(){const c=$('regQR2').querySelector('canvas');if(!c)return;const a=document.createElement('a');a.href=c.toDataURL('image/png');a.download='rosabaya-team-registration-qr.png';a.click()};
  window.downloadRegQR=function(){const c=$('regQR').querySelector('canvas');if(!c)return;const a=document.createElement('a');a.href=c.toDataURL('image/png');a.download='rosabaya-player-registration-qr.png';a.click()};
  window.loadRegs=async function(){const L=$('regList');L.innerHTML='<div class="empty">Loading...</div>';
   try{regs=await rpc('list_registrations',{p_pin:data.pin});renderRegs()}
-  catch(e){L.innerHTML='<div class="empty">Hindi ma-load ('+esc(e.message)+'). I-check ang config.js, ang supabase-setup.sql, at kung tugma ang PIN.</div>'}};
+  catch(e){L.innerHTML='<div class="empty">Hindi ma-load ('+esc(e.message)+'). I-check ang config.js, ang supabase-setup.sql, at kung tugma ang PIN.</div>'}
+   const TL=$('teamRegList');TL.innerHTML='<div class="empty">Loading...</div>';
+   try{teamRegs=await rpc('list_team_registrations',{p_pin:data.pin});renderTeamRegs()}
+   catch(e){TL.innerHTML='<div class="empty">Hindi ma-load ('+esc(e.message)+'). I-run ang team_registration_setup.sql sa Supabase at tiyaking tugma ang PIN.</div>'}};
  function renderRegs(){$('regCount').textContent=regs.length+' pending';
   $('regList').innerHTML=regs.length?regs.map(x=>{const t=data.teams.find(t=>t.name.toLowerCase()===String(x.team).trim().toLowerCase());
-   return `<div class="team"><div class="logo">${x.photo?`<img src="${x.photo}">`:esc((x.ign||'?').slice(0,2))}</div><div class="teaminfo"><strong>${esc(x.ign)}</strong><small>${esc(x.team)}${t?'':' (bagong team)'} · ${esc(x.role)}</small></div><div class="teamtools"><button class="btn small" onclick="approveReg('${esc(x.id)}')">Approve</button><button class="btn danger small" onclick="rejectReg('${esc(x.id)}')">Reject</button></div></div>`}).join(''):'<div class="empty">Walang pending na registration.</div>'}
+   return `<div class="team"><div class="logo">${/^data:image\//.test(x.photo||'')?`<img src="${esc(x.photo)}">`:esc((x.ign||'?').slice(0,2))}</div><div class="teaminfo"><strong>${esc(x.ign)}</strong><small>${esc(x.team)}${t?'':' (bagong team)'} · ${esc(x.role)}</small></div><div class="teamtools"><button class="btn small" onclick="approveReg('${esc(x.id)}')">Approve</button><button class="btn danger small" onclick="rejectReg('${esc(x.id)}')">Reject</button></div></div>`}).join(''):'<div class="empty">Walang pending na registration.</div>'}
  window.approveReg=async function(id){const x=regs.find(r=>r.id===id);if(!x)return;const name=String(x.team).trim();
   let t=data.teams.find(t=>t.name.toLowerCase()===name.toLowerCase());
   if(t&&t.players.some(q=>playerName(q).toLowerCase()===x.ign.toLowerCase())){toast('Nasa team na ang IGN na ito.');return}
@@ -851,6 +857,20 @@ load();if(sessionStorage.getItem('rosabayaAdmin')==='yes'){$('loginScreen').clas
  window.rejectReg=async function(id){if(!confirm('Itago ang registration na ito?'))return;
   try{await rpc('resolve_registration',{p_pin:data.pin,p_id:id,p_status:'rejected'})}catch(e){toast('Hindi na-update: '+e.message);return}
   regs=regs.filter(r=>r.id!==id);renderRegs()};
+  function renderTeamRegs(){$('teamRegCount').textContent=teamRegs.length+' pending';
+   $('teamRegList').innerHTML=teamRegs.length?teamRegs.map(x=>{const t=data.teams.find(t=>t.name.toLowerCase()===String(x.name).trim().toLowerCase());
+    return `<div class="team"><div class="logo">${/^data:image\//.test(x.logo||'')?`<img src="${esc(x.logo)}">`:esc((x.name||'?').slice(0,2))}</div><div class="teaminfo"><strong>${esc(x.name)}</strong><small>Captain: ${esc(x.captain)}${t?' · nasa Teams na':''}</small></div><div class="teamtools"><button class="btn small" onclick="approveTeamReg(${Number(x.id)})">Approve</button><button class="btn danger small" onclick="rejectTeamReg(${Number(x.id)})">Reject</button></div></div>`}).join(''):'<div class="empty">Walang pending na team registration.</div>'}
+  window.approveTeamReg=async function(id){const x=teamRegs.find(r=>r.id===id);if(!x)return;const name=String(x.name).trim();
+   try{await rpc('resolve_team_registration',{p_pin:data.pin,p_id:id,p_status:'approved'})}catch(e){toast('Hindi na-update: '+e.message);return}
+   const logo=/^data:image\//.test(x.logo||'')?x.logo:'';let t=data.teams.find(t=>t.name.toLowerCase()===name.toLowerCase());
+   if(t){if(!t.captain)t.captain=x.captain;if(!t.logo&&logo)t.logo=logo;toast(name+' ay nasa Teams na — na-update ang captain/logo kung wala pa.')}
+   else{data.teams.push({id:uid(),name,captain:x.captain,players:[],logo,groupPhoto:''});
+    if(!data.generated&&data.teams.length>=2)buildDoubleElim();
+    toast(name+' idinagdag sa Teams.'+(data.generated?' I-rebuild ang bracket kung kailangan.':''))}
+   teamRegs=teamRegs.filter(r=>r.id!==id);persist();renderTeamRegs()};
+  window.rejectTeamReg=async function(id){if(!confirm('Itago ang team registration na ito?'))return;
+   try{await rpc('resolve_team_registration',{p_pin:data.pin,p_id:id,p_status:'rejected'})}catch(e){toast('Hindi na-update: '+e.message);return}
+   teamRegs=teamRegs.filter(r=>r.id!==id);renderTeamRegs()};
 })();
 </script>
 

@@ -108,7 +108,8 @@ body::after{right:0;background:repeating-linear-gradient(65deg,transparent 0 14p
 .tag{display:flex;align-items:center;justify-content:center;gap:14px;padding:18px 18px 8px}.tag span{width:28px;height:1px;background:#2c4a93}.tag i{font-weight:800;font-size:13px;letter-spacing:1.5px;text-align:center;line-height:1.25;color:#a9c4ff;transform:skewX(-8deg)}
 
 /* BRACKET (esports tree) */
-.bk-hint{margin:12px 2px 0;font-size:12px;color:var(--muted)}@media(min-width:720px){.bk-hint.few{display:none}}
+.bk-hint{margin:12px 2px 0;font-size:12px;color:var(--muted)}
+.bk-grp{display:flex;align-items:center;gap:10px;margin:24px 2px 8px}.bk-grp:first-child{margin-top:12px}.bk-grp span{padding:5px 14px;border-radius:999px;font-size:12px;font-weight:900;letter-spacing:2px;color:#fff;background:#1456e0}.bk-grp::after{content:"";flex:1;height:1px;background:var(--line)}.bk-grp.lo span{background:#b3263e}.bk-grp.gf span{background:#b8860b}
 .bk-scroll{overflow-x:auto;overflow-y:hidden;padding:6px 2px 14px;-webkit-overflow-scrolling:touch;scroll-snap-type:x proximity}
 .bk{display:flex;gap:28px;align-items:stretch;width:max-content;min-width:100%}
 .bk-col{width:clamp(200px,68vw,240px);flex:none;display:flex;flex-direction:column;scroll-snap-align:start}
@@ -139,6 +140,12 @@ body::after{right:0;background:repeating-linear-gradient(65deg,transparent 0 14p
 .bk-bronze{flex:1;min-width:190px;display:flex;flex-direction:column;align-items:center;text-align:center;padding:12px 14px;border:1.5px solid #b87333;border-radius:18px;background:linear-gradient(180deg,#1b1a2a,#0f1530)}
 .bk-bronze .tr{font-size:30px;line-height:1}.bk-bronze b{margin-top:4px;color:#e08a3c;font-size:15px;font-weight:900;letter-spacing:.5px}.bk-bronze span{margin-top:2px;color:#fff;font-weight:800;text-transform:uppercase}
 
+/* REGISTER: Player / Team switch */
+.reg-seg{display:flex;gap:4px;margin-bottom:16px;background:#0a1330;border:1px solid var(--line);border-radius:999px;padding:4px}
+.reg-seg button{flex:1;padding:10px;border:0;border-radius:999px;background:none;color:var(--muted);font:inherit;font-weight:800;cursor:pointer}
+.reg-seg button.on{background:linear-gradient(180deg,#2f82ff,#1456e0);color:#fff;box-shadow:0 4px 12px #1e6bff55}
+.reg-go{display:block;margin:6px 0 0;padding:4px 0;text-align:left;font-size:13px}
+.reg-msg ~ .btn{margin-top:12px}
 /* ELIMINATED + TEAM HISTORY */
 .st-b{display:inline-block;margin-top:3px;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:900;letter-spacing:.8px;white-space:nowrap}
 .st-b.out{background:#3a1220;color:#ff7b8a;border:1px solid #7a2236}.st-b.champ{background:#3a2b08;color:#ffc857;border:1px solid #8a6a17}
@@ -390,23 +397,26 @@ function renderNav(){
 }
 
 /* ELIMINATED / CHAMPION + MATCH HISTORY */
-const KO=/quarter|semi|final|play-?off|knock-?out|lower|loser|round of|\bro\d+\b|\bqf\b|\bsf\b/i,NOKO=/upper|winner|group|round.?robin|swiss|league|regular|third|3rd|bronze/i;
-const mtxt=m=>[m.section,m.round,m.label].filter(Boolean).join(' ');
-const elimMatch=m=>done(m)&&KO.test(mtxt(m))&&!NOKO.test(mtxt(m));
+const isDE=()=>(D.matches||[]).some(m=>/upper|lower/i.test(m.section||''));
+const lossesOf=t=>(D.matches||[]).filter(m=>done(m)&&(m.a===t.id||m.b===t.id)&&m.winner!==t.id);
 function champId(){
- const main=(D.matches||[]).filter(m=>!isThird(m)),names=[];main.forEach(m=>{const k=m.section||'Matches';if(!names.includes(k))names.push(k)});
- if(!names.length)return null;const l=main.filter(m=>(m.section||'Matches')===names[names.length-1]);
+ const ms=D.matches||[];
+ if(isDE()){
+  const rf=ms.find(m=>/reset/i.test(m.section||m.label||''));if(rf)return rf.winner||null;
+  const gf=ms.find(m=>/grand/i.test(m.section||m.label||''));return gf&&gf.a&&gf.b&&gf.winner?gf.winner:null}
+ const main=ms.filter(m=>!isThird(m)),keys=[];main.forEach(m=>{const k=m.label||m.section||'';if(!keys.includes(k))keys.push(k)});
+ if(!keys.length)return null;const l=main.filter(m=>(m.label||m.section||'')===keys[keys.length-1]);
  return l.length===1&&l[0].winner?l[0].winner:null}
+/* double elimination: 2 losses = out. single elimination: 1 loss = out. */
 function teamState(t){
- const lost=(D.matches||[]).find(m=>elimMatch(m)&&(m.a===t.id||m.b===t.id)&&m.winner!==t.id);
- const champ=champId()===t.id;
- return{champ,out:!champ&&(!!lost||t.eliminated===true),at:lost?(lost.section||lost.round||lost.label||''):''}}
+ const ls=lossesOf(t),champ=champId()===t.id,out=!champ&&(ls.length>=(isDE()?2:1)||t.eliminated===true),last=ls[ls.length-1];
+ return{champ,out,at:out&&last?(last.label||last.section||''):''}}
 const stBadge=z=>z.champ?'<span class="st-b champ">👑 CHAMPION</span>':z.out?'<span class="st-b out">✖ ELIMINATED</span>':'';
 const histOf=t=>(D.matches||[]).filter(m=>done(m)&&(m.a===t.id||m.b===t.id)).sort((a,b)=>(a.date||'9999').localeCompare(b.date||'9999'));
 function histRows(t){
  const l=histOf(t);if(!l.length)return'<p class="muted small" style="margin:6px 2px">Wala pang match history.</p>';
  return'<div class="hx">'+l.map(m=>{const mine=m.a===t.id,opp=team(mine?m.b:m.a),win=m.winner===t.id,me=mine?m.sa:m.sb,op=mine?m.sb:m.sa;
-  const sub=[m.section,m.label&&m.label!==m.section?m.label:'',m.date?fmtD(m.date):''].filter(Boolean).join(' · ');
+  const sub=[m.label||m.section,m.date?fmtD(m.date):''].filter(Boolean).join(' · ');
   return`<div class="hx-i"><span class="hx-r ${win?'w':'l'}">${win?'W':'L'}</span>${logo(opp)}<div class="hx-m"><b>vs ${esc(opp?.name||'TBD')}</b><small>${esc(sub)}</small></div><b class="hx-s">${esc(me===''?0:me)} – ${esc(op===''?0:op)}</b></div>`}).join('')+'</div>'}
 function tm(i){
  const t=D.teams[i];if(!t)return;const z=teamState(t),ms=histOf(t),w=ms.filter(m=>m.winner===t.id).length;
@@ -433,22 +443,31 @@ const V={
  bracket(){
   const all=D.matches||[];
   if(!all.length)return'<div class="empty">Wala pang bracket.</div>';
-  const third=all.filter(isThird),main=all.filter(m=>!isThird(m)),secs=[];
-  main.forEach(m=>{const k=m.section||'Matches';let c=secs.find(x=>x.name===k);if(!c){c={name:k,list:[]};secs.push(c)}c.list.push(m)});
-  const last=secs.length-1,maxN=Math.max(1,...secs.map(c=>c.list.length));
-  const fm=last>=0&&secs[last].list.length===1?secs[last].list[0]:null;
-  const champ=fm&&fm.winner?team(fm.winner):null;
+  const third=all.filter(isThird),main=all.filter(m=>!isThird(m)),de=isDE(),cols=[];
+  main.forEach(m=>{const k=m.label||m.section||'Matches';let c=cols.find(x=>x.key===k);if(!c){c={key:k,section:m.section||'',list:[]};cols.push(c)}c.list.push(m)});
+  const fin=c=>/grand|reset/i.test(c.section);
+  const gk=c=>de?(fin(c)?'GRAND FINAL':(c.section||'BRACKET')):'';
+  const groups=[];cols.forEach(c=>{const k=gk(c);let g=groups.find(x=>x.k===k);if(!g){g={k,cols:[]};groups.push(g)}g.cols.push(c)});
+  const cid=champId(),champ=cid?team(cid):null,lastG=groups[groups.length-1],lastC=lastG.cols[lastG.cols.length-1];
+  const hasChamp=!!champ&&lastC.list.length===1;
+  const title=c=>{const k=c.key,sc=c.section;return(sc&&k.length>sc.length&&k.toLowerCase().startsWith(sc.toLowerCase()))?k.slice(sc.length).replace(/^[\s·\-–—:|]+/,''):k};
   const colDate=l=>{const d=l.map(m=>m.date).filter(Boolean).sort()[0];return d?fmtD(d).toUpperCase():'&nbsp;'};
-  const cols=secs.map((c,ci)=>{
-   const feeds=ci<last&&c.list.length>1&&c.list.length===secs[ci+1].list.length*2;
-   const fed=ci>0&&secs[ci-1].list.length===c.list.length*2;
-   const slots=c.list.map((m,i)=>{
-    const isF=ci===last&&c.list.length===1;
-    return `<div class="bk-slot${feeds?(i%2?' c-bot':' c-top'):''}${fed?' c-in':''}">${brkCard(m,isF)}${isF&&champ?champBadge(champ):''}</div>`}).join('');
-   return `<div class="bk-col"><div class="bk-ch"><b>${esc(c.name)}</b><span>${colDate(c.list)}</span></div><div class="bk-slots">${slots}</div></div>`}).join('');
-  const extra=champ?Math.max(0,Math.round(maxN*118/2+62+200-maxN*118)):0;
-  let out=`<div class="bk-scroll"><div class="bk" style="padding-bottom:${extra}px">${cols}</div></div>`;
-  if(secs.length>1||extra)out+='<p class="bk-hint'+(secs.length<=3?' few':'')+'">↔ Mag-swipe pakaliwa/pakanan para makita ang buong bracket.</p>';
+  const renderGroup=g=>{
+   const cs=g.cols,last=cs.length-1,maxN=Math.max(1,...cs.map(c=>c.list.length)),isLast=g===lastG;
+   const html=cs.map((c,ci)=>{
+    const feeds=ci<last&&c.list.length>1&&c.list.length===cs[ci+1].list.length*2;
+    const fed=ci>0&&cs[ci-1].list.length===c.list.length*2;
+    const slots=c.list.map((m,i)=>{
+     const gold=fin(c)||(!de&&isLast&&ci===last&&c.list.length===1);
+     return `<div class="bk-slot${feeds?(i%2?' c-bot':' c-top'):''}${fed?' c-in':''}">${brkCard(m,gold)}${hasChamp&&isLast&&ci===last?champBadge(champ):''}</div>`}).join('');
+    return `<div class="bk-col"><div class="bk-ch"><b>${esc(title(c))}</b><span>${colDate(c.list)}</span></div><div class="bk-slots">${slots}</div></div>`}).join('');
+   const extra=hasChamp&&isLast?Math.max(0,Math.round(maxN*118/2+62+200-maxN*118)):0;
+   return `<div class="bk-scroll"><div class="bk" style="padding-bottom:${extra}px">${html}</div></div>`};
+  let out='';
+  groups.forEach(g=>{
+   if(g.k)out+=`<div class="bk-grp ${/lower/i.test(g.k)?'lo':/grand/i.test(g.k)?'gf':'up'}"><span>${esc(g.k)}</span></div>`;
+   out+=renderGroup(g)});
+  if(cols.some(c=>c.list.length)&&groups.some(g=>g.cols.length>1))out+='<p class="bk-hint">↔ Mag-swipe pakaliwa/pakanan para makita ang buong bracket.</p>';
   if(third.length){
    const tm=third[0],tw=tm.winner?team(tm.winner):null;
    out+=`<div class="bk-third"><div class="bk-ch"><b>THIRD PLACE MATCH</b><span>${colDate(third)}</span></div><div class="bk-third-row">${brkCard(tm,false)}${tw?`<div class="bk-bronze"><div class="tr">🏆</div><b>3RD PLACE</b><span>${esc(tw.name)}</span></div>`:''}</div></div>`;
@@ -459,43 +478,82 @@ const V={
   return (D.teams||[]).length?`<div class="grid brk-grid" style="margin-top:14px">`+D.teams.map((t,i)=>`<div class="card"><button class="team-h" onclick="tg(${i})">${logo(t)}<div><strong>${esc(t.name)}</strong><small>Captain: ${esc(t.captain)} · ${t.players.length} players</small>${stBadge(teamState(t))}</div><span class="chev">${open[i]?'▲':'▼'}</span></button>${open[i]?`<div class="roster">${t.players.map((p,j)=>`<div class="pl" onclick="pp(${i},${j})">${p.photo?`<img class="ph" src="${p.photo}" alt="">`:`<div class="ph">${esc(p.name.slice(0,1).toUpperCase())}</div>`}<b>${esc(p.name)}</b><span class="role">${esc(p.role||'Flex')}</span></div>`).join('')}</div><div class="hx-h">MATCH HISTORY</div>${histRows(t)}`:''}</div>`).join('')+`</div>`:'<div class="empty">Wala pang teams.</div>';
  }
 };
-/* REGISTER: one form, used in the "Register" tab and on the login screen */
-function regForm(){
- const tl=((D&&D.teams)||[]).map(t=>`<option value="${esc(t.name)}">`).join('');
- return `<form class="reg-form" autocomplete="off">
+/* REGISTER: Player + Team forms (Register tab and login screen) */
+let regMode='player',lastTeam='';
+const TKEY='rb_teams';
+async function getTeams(){
+ const m=new Map(),add=n=>{n=(n||'').trim();if(n)m.set(n.toLowerCase(),n)};
+ (D&&D.teams||[]).forEach(t=>add(t.name));
+ try{const r=await fetch(RB.url+'/rest/v1/public_team_names?select=name&order=name',{headers:{apikey:RB.key,Authorization:'Bearer '+RB.key}});
+  if(!r.ok)throw 0;(await r.json()).forEach(x=>add(x.name));localStorage.setItem(TKEY,JSON.stringify([...m.values()]))}
+ catch(e){try{JSON.parse(localStorage.getItem(TKEY)||'[]').forEach(add)}catch(_){}}
+ add(lastTeam);
+ return[...m.values()].sort((x,y)=>x.localeCompare(y,undefined,{sensitivity:'base'}))}
+const picField=(label,req)=>`<label>${label}</label><div class="reg-pic"><div class="reg-prev">${req?'IGN':'LOGO'}</div><input name="photo" type="file" accept="image/*"${req?' required':''}></div>`;
+function playerFormHTML(){return `<form class="reg-form" data-kind="player" autocomplete="off">
   <div class="eyebrow">PLAYER REGISTRATION</div><h1>Mag-register</h1>
-  <p class="muted">Punan ang details mo para mapasama ka sa roster ng team mo.</p>
+  <p class="muted">Piliin ang team mo at punan ang details para mapasama ka sa roster.</p>
   <p class="hp"><label>Huwag punan: <input name="bot-field" tabindex="-1"></label></p>
   <label>IGN (In-Game Name)</label><input name="ign" required maxlength="40" autocomplete="off">
-  <label>Team</label><input name="team" required maxlength="60" autocomplete="off" list="rbTeams" placeholder="Eksaktong pangalan ng team mo"><datalist id="rbTeams">${tl}</datalist>
+  <label>Team</label><select name="team" required><option value="">Naglo-load ng teams...</option></select>
+  <button type="button" class="link reg-go" data-go="team">Wala pa ang team mo? Mag-register ng team →</button>
   <label>Role</label>
   <select name="role" required><option value="">Pumili ng role</option><option>Tank</option><option>Fighter</option><option>Core</option><option>Mage</option><option>Marksman</option><option>Flex</option></select>
-  <label>Profile picture</label>
-  <div class="reg-pic"><div class="reg-prev">IGN</div><input name="photo" type="file" accept="image/*" required></div>
+  ${picField('Profile picture',true)}
   <button class="btn" type="submit">Isumite</button>
   <div class="reg-msg"></div>
  </form>`}
-function shrink(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>{const i=new Image();i.onload=()=>{const k=Math.min(1,360/Math.max(i.width,i.height)),c=document.createElement('canvas');c.width=i.width*k;c.height=i.height*k;c.getContext('2d').drawImage(i,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',.8))};i.onerror=rej;i.src=r.result};r.onerror=rej;r.readAsDataURL(file)})}
-function bindReg(root){
+function teamFormHTML(){return `<form class="reg-form" data-kind="team" autocomplete="off">
+  <div class="eyebrow">TEAM REGISTRATION</div><h1>Mag-register ng Team</h1>
+  <p class="muted">Pagkatapos mag-register, lalabas na ang team mo sa listahan ng Player Registration.</p>
+  <p class="hp"><label>Huwag punan: <input name="bot-field" tabindex="-1"></label></p>
+  <label>Team name</label><input name="name" required maxlength="60" autocomplete="off">
+  <label>Captain name</label><input name="captain" required maxlength="60" autocomplete="off" placeholder="Pangalan ng captain">
+  ${picField('Team logo (optional)',false)}
+  <button class="btn" type="submit">Isumite ang Team</button>
+  <div class="reg-msg"></div>
+ </form>`}
+function regForm(){
+ return `<div class="reg-seg"><button type="button" data-m="player" class="${regMode==='player'?'on':''}">👤 Player</button><button type="button" data-m="team" class="${regMode==='team'?'on':''}">🛡️ Team</button></div>`+(regMode==='team'?teamFormHTML():playerFormHTML())}
+function mountReg(root,wrap){root.innerHTML=wrap?'<div class="card reg-wrap">'+regForm()+'</div>':regForm();bindReg(root,wrap)}
+function shrink(file,max){max=max||360;return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>{const i=new Image();i.onload=()=>{const k=Math.min(1,max/Math.max(i.width,i.height)),c=document.createElement('canvas');c.width=i.width*k;c.height=i.height*k;c.getContext('2d').drawImage(i,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',.8))};i.onerror=rej;i.src=r.result};r.onerror=rej;r.readAsDataURL(file)})}
+function bindReg(root,wrap){
+ root.querySelectorAll('.reg-seg button,.reg-go').forEach(b=>b.onclick=()=>{regMode=b.dataset.m||b.dataset.go;mountReg(root,wrap)});
  const f=root.querySelector('.reg-form');if(!f)return;
- const prev=f.querySelector('.reg-prev'),m=f.querySelector('.reg-msg'),btn=f.querySelector('button[type=submit]'),ph=f.elements['photo'];
+ const kind=f.dataset.kind,prev=f.querySelector('.reg-prev'),m=f.querySelector('.reg-msg'),btn=f.querySelector('button[type=submit]'),ph=f.elements['photo'],idle=btn.textContent;
  ph.onchange=()=>{const x=ph.files[0];if(!x)return;const im=new Image();im.src=URL.createObjectURL(x);prev.textContent='';prev.appendChild(im)};
+ if(kind==='player')getTeams().then(list=>{
+  const sel=f.elements['team'];if(!sel||sel.tagName!=='SELECT')return;
+  if(!list.length){const inp=document.createElement('input');inp.name='team';inp.required=true;inp.maxLength=60;inp.placeholder='Eksaktong pangalan ng team mo';sel.replaceWith(inp);return}
+  sel.innerHTML='<option value="">Pumili ng team</option>'+list.map(n=>`<option>${esc(n)}</option>`).join('');
+  if(lastTeam)sel.value=lastTeam});
  f.onsubmit=async e=>{e.preventDefault();m.className='reg-msg';m.textContent='';
   if(f.elements['bot-field'].value)return;
   btn.disabled=true;btn.textContent='Ipinapadala...';
-  try{const photo=await shrink(ph.files[0]);
-   const r=await fetch(RB.url+'/rest/v1/registrations',{method:'POST',headers:{apikey:RB.key,Authorization:'Bearer '+RB.key,'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify({ign:f.elements['ign'].value.trim(),team:f.elements['team'].value.trim(),role:f.elements['role'].value,photo})});
+  try{
+   let path,body;
+   if(kind==='team'){
+    const logo=ph.files[0]?await shrink(ph.files[0],240):null;
+    path='/rest/v1/team_registrations';body={name:f.elements['name'].value.trim(),captain:f.elements['captain'].value.trim(),logo}}
+   else{
+    const photo=await shrink(ph.files[0]);
+    path='/rest/v1/registrations';body={ign:f.elements['ign'].value.trim(),team:f.elements['team'].value.trim(),role:f.elements['role'].value,photo}}
+   const r=await fetch(RB.url+path,{method:'POST',headers:{apikey:RB.key,Authorization:'Bearer '+RB.key,'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify(body)});
+   if(r.status===409)throw Error('dup');
    if(!r.ok)throw Error('HTTP '+r.status);
-   f.reset();prev.textContent='IGN';m.className='reg-msg ok';m.textContent='Salamat! Naipadala na ang registration mo. Hintayin ang approval ng organizer.'}
-  catch(err){m.className='reg-msg err';m.textContent=navigator.onLine?'Hindi naipadala. Subukan ulit.':'Walang internet connection. Subukan ulit pag online na.'}
-  btn.disabled=false;btn.textContent='Isumite'}}
-$('goReg').onclick=()=>{$('auth').classList.add('hidden');$('regPub').classList.remove('hidden');$('regPubBody').innerHTML=regForm();bindReg($('regPubBody'));scrollTo(0,0);checkOff(true)};
+   if(kind==='team'){
+    lastTeam=body.name;f.reset();prev.textContent='LOGO';m.className='reg-msg ok';m.textContent='Salamat! Naipadala na ang team registration. Puwede nang mag-register ng players sa team mo.';
+    const go=document.createElement('button');go.type='button';go.className='btn';go.textContent='Mag-register ng Player →';go.onclick=()=>{regMode='player';mountReg(root,wrap)};m.after(go)}
+   else{f.reset();prev.textContent='IGN';if(lastTeam)f.elements['team'].value=lastTeam;m.className='reg-msg ok';m.textContent='Salamat! Naipadala na ang registration mo. Hintayin ang approval ng organizer.'}}
+  catch(err){m.className='reg-msg err';m.textContent=err.message==='dup'?'May team na na may ganitong pangalan.':navigator.onLine?'Hindi naipadala. Subukan ulit.':'Walang internet connection. Subukan ulit pag online na.'}
+  btn.disabled=false;btn.textContent=idle}}
+$('goReg').onclick=()=>{$('auth').classList.add('hidden');$('regPub').classList.remove('hidden');mountReg($('regPubBody'),false);scrollTo(0,0);checkOff(true)};
 $('regBack').onclick=()=>{$('regPub').classList.add('hidden');$('regPubBody').innerHTML='';$('auth').classList.remove('hidden');checkOff(true)};
 
 function render(){renderNav();document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===tab));
  $('sub').textContent=(TABS.find(t=>t[0]===tab)||[])[2]||'';
  {const nv=$('nav'),on=nv.querySelector('.on');if(on)nv.scrollTo({left:on.offsetLeft-(nv.clientWidth-on.offsetWidth)/2,behavior:'smooth'})}
- if(tab==='register'){$('view').innerHTML='<div class="card reg-wrap">'+regForm()+'</div>';bindReg($('view'));return}
+ if(tab==='register'){if(!$('view').querySelector('.reg-form'))mountReg($('view'),true);return}
  if(!D){$('view').innerHTML='<div class="empty">'+(navigator.onLine?'Wala pang na-publish na data. Subukan ulit mamaya.':'Walang internet connection. Subukan ulit pag online na.')+'</div>';return}
  $('ev').textContent=(D.eventName||'Rosabaya ML Tournament');
  $('view').innerHTML=V[tab]()+(D._at?`<p class="muted small" style="text-align:center;margin-top:22px">Huling update: ${new Date(D._at).toLocaleString('en-PH',{dateStyle:'medium',timeStyle:'short'})}</p>`:'')}
@@ -522,4 +580,7 @@ if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol))navigator.s
 
 if(sess)start();else $('auth').classList.remove('hidden');
 checkOff(true);
+/* QR deep links: viewer.html#register (player) and viewer.html#team (team) */
+{const H=location.hash;if(H==='#register'||H==='#team'){regMode=H==='#team'?'team':'player';
+ if(sess){userPicked=true;tab='register';render()}else $('goReg').onclick()}}
 </script></body></html>
