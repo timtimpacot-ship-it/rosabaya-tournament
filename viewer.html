@@ -3,25 +3,28 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0b1020"><title>Rosabaya ML Tournament</title>
 <style>
-:root{--bg:#0b1020;--panel:#141d33;--p2:#1b2946;--line:#304463;--gold:#ffc857;--cyan:#56d8e8;--txt:#f5f7ff;--muted:#aab6d0;--green:#4ade80;--red:#f87171}
+:root{--bg:#040a1c;--panel:#0a1634;--p2:#10224f;--line:#1b2f63;--gold:#ffc857;--cyan:#4cc9ff;--blue:#1e6bff;--txt:#f5f7ff;--muted:#8da2cf;--green:#4ade80;--red:#f87171}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}html,body{margin:0}
-body{background:radial-gradient(ellipse at 85% -10%,#26385e 0,transparent 40%),var(--bg);color:var(--txt);font:15px/1.45 Inter,system-ui,Arial,sans-serif;max-width:960px;margin:0 auto;min-height:100vh;padding-bottom:calc(74px + env(safe-area-inset-bottom))}
+body{background:radial-gradient(ellipse at 90% -5%,#16367c 0,transparent 45%),radial-gradient(ellipse at 0% 100%,#2d0a1c 0,transparent 38%),linear-gradient(180deg,#040a1c,#071230) #040a1c;color:var(--txt);font:15px/1.45 Inter,system-ui,Arial,sans-serif;max-width:960px;margin:0 auto;min-height:100vh;padding-bottom:calc(24px + env(safe-area-inset-bottom))}
 .hidden{display:none!important}button,input{font:inherit}
 .auth{padding:40px 22px;text-align:center;max-width:440px;margin:0 auto}
 .auth-logo{width:110px;height:110px;border-radius:50%;object-fit:cover;margin:0 auto 14px;border:3px solid var(--gold);box-shadow:0 8px 24px rgba(0,0,0,.5);display:block}
 .eyebrow{color:var(--cyan);font-size:11px;font-weight:900;letter-spacing:2.5px}h1{margin:6px 0 4px;font-size:26px;line-height:1.1}.muted{color:var(--muted)}.small{font-size:12px}
-.card{background:linear-gradient(145deg,var(--panel),#111a2e);border:1px solid var(--line);border-radius:14px;padding:14px;margin:0;text-align:left}
+.card{background:linear-gradient(145deg,#0c1b45,#08122b);border:1px solid var(--line);border-left:4px solid var(--blue);border-radius:12px;padding:14px;margin:0;text-align:left}
 label{display:block;font-size:12px;font-weight:700;color:var(--muted);margin:14px 0 5px;text-align:left}
 input{width:100%;background:#0c1426;border:1px solid var(--line);border-radius:9px;padding:13px;color:var(--txt);outline:none}input:focus{border-color:var(--cyan)}
 .btn{width:100%;margin-top:18px;padding:14px;border:0;border-radius:10px;background:linear-gradient(135deg,#ffe16a,#f4a900);color:#141a2a;font-weight:900;cursor:pointer}
 .link{background:none;border:0;color:var(--cyan);margin-top:14px;padding:6px;cursor:pointer;width:100%}
 .err{margin-top:12px;color:var(--red);font-size:13px;min-height:18px}
-header{position:sticky;top:0;z-index:5;background:#0b1020ee;backdrop-filter:blur(10px);border-bottom:1px solid var(--line);padding:calc(12px + env(safe-area-inset-top)) 18px 12px;display:flex;align-items:center;justify-content:space-between;gap:10px}
-header b{display:block;font-size:16px}header small{color:var(--muted);font-size:12px}
-.ibtn{background:var(--p2);border:1px solid var(--line);color:var(--txt);border-radius:9px;padding:7px 12px;font-size:12px;cursor:pointer;transition:.15s}.ibtn:hover{border-color:var(--cyan)}
+.top{position:sticky;top:0;z-index:5;background:linear-gradient(180deg,#040a1cf0,#071230ea);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+header{display:flex;align-items:center;gap:12px;padding:calc(12px + env(safe-area-inset-top)) 16px 6px}
+.hd-logo{width:46px;height:46px;flex:none;border-radius:50%;object-fit:cover;border:2px solid var(--gold);box-shadow:0 4px 14px rgba(0,0,0,.5)}.hd-div{width:1px;align-self:stretch;margin:4px 0;background:linear-gradient(180deg,transparent,#4b6bb5,transparent);flex:none}
+.hd-t{flex:1;min-width:0}header b{display:block;font-size:clamp(16px,4.8vw,26px);line-height:1.05;font-weight:900;letter-spacing:.5px;text-transform:uppercase;color:#fff}header small{display:block;margin-top:3px;color:#8fb0e8;font-size:12px;font-weight:700;letter-spacing:3px;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}header small em{font-style:normal;letter-spacing:.5px;text-transform:none;color:var(--muted)}#hi:not(:empty)::before{content:"  ·  "}
+.hd-act{display:flex;gap:8px;flex:none}
+.ibtn{background:#0d1a40;border:1px solid var(--line);color:var(--txt);border-radius:9px;padding:7px 12px;font-size:12px;cursor:pointer;transition:.15s}.ibtn:hover{border-color:var(--cyan)}
 main{padding:10px 18px 24px}h2{font-size:14px;color:var(--gold);margin:20px 2px 10px;letter-spacing:1px;text-transform:uppercase}
 .sec-head{display:flex;justify-content:space-between;align-items:center;margin:18px 2px 10px}
-.sec-head b{color:var(--gold);font-size:14px;letter-spacing:1px}.sec-head span{color:#6ea8fe;font-size:13px;font-weight:600}
+.sec-head b{color:#fff;font-size:14px;letter-spacing:1px}.sec-head span{color:#7da3e8;font-size:13px;font-weight:600}
 .grid{display:grid;grid-template-columns:1fr;gap:14px}
 .empty{padding:36px 14px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:12px;margin:12px 0}
 
@@ -80,8 +83,8 @@ td .tm{display:flex;align-items:center;gap:10px;font-weight:700}.pts{color:var(-
 .team-h{display:flex;align-items:center;gap:12px;width:100%;background:none;border:0;color:inherit;text-align:left;padding:0;cursor:pointer}.team-h .lg{width:46px;height:46px}.team-h strong{display:block;font-size:15px}.team-h small{color:var(--muted)}.chev{margin-left:auto;color:var(--muted)}
 .roster{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;margin-top:14px}.pl{background:#0c1426;border:1px solid #293b5a;border-radius:11px;padding:12px 8px;text-align:center;cursor:pointer;transition:.15s}.pl:hover{border-color:var(--cyan)}
 .pl .ph{width:72px;height:72px;border-radius:50%;object-fit:cover;margin:0 auto 6px;display:grid;place-items:center;background:#304466;color:var(--gold);font-weight:900;font-size:22px}.pl b{display:block;overflow-wrap:anywhere;font-size:13px}.role{display:inline-block;margin-top:4px;background:#283b5e;color:var(--cyan);border-radius:20px;padding:2px 8px;font-size:10px;font-weight:800}
-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:960px;display:grid;grid-template-columns:repeat(6,1fr);background:#0b1020f5;border-top:1px solid var(--line);padding:6px 4px calc(6px + env(safe-area-inset-bottom));z-index:6}
-nav button{background:none;border:0;color:var(--muted);padding:6px 0;font-size:11px;font-weight:700;cursor:pointer;transition:.15s}nav button span{display:block;font-size:20px;line-height:1.2}nav button.on{color:var(--gold)}nav button:hover{color:var(--txt)}
+nav{display:flex;gap:8px;overflow-x:auto;padding:8px 14px 12px;scrollbar-width:none;-webkit-overflow-scrolling:touch}nav::-webkit-scrollbar{display:none}
+nav button{flex:none;background:#0d1a40;border:1px solid #1b2f63;color:#7fa6e6;padding:10px 18px;border-radius:999px;font-size:13px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;cursor:pointer;transition:.15s}nav button.on{background:linear-gradient(180deg,#2f82ff,#1456e0);border-color:#5b9bff;color:#fff;box-shadow:0 4px 14px #1e6bff66}nav button:hover{color:#fff}
 .modal{position:fixed;inset:0;background:#000d;z-index:20;display:grid;place-items:center;padding:20px;text-align:center}.modal img{max-width:100%;max-height:68vh;border-radius:14px}.modal .big{width:200px;height:200px;border-radius:50%;background:#304466;display:grid;place-items:center;font-size:70px;color:var(--gold);margin:auto}.modal h3{margin:14px 0 4px;font-size:22px}
 
 @media(max-width:560px){
@@ -95,11 +98,46 @@ nav button{background:none;border:0;color:var(--muted);padding:6px 0;font-size:1
  body{padding-bottom:24px}
  .auth{margin-top:40px;background:linear-gradient(145deg,var(--panel),#111a2e);border:1px solid var(--line);border-radius:18px;padding:36px 32px}
  .brk-grid{grid-template-columns:repeat(2,1fr)}
- nav{position:sticky;top:57px;bottom:auto;left:auto;transform:none;border-top:0;border-bottom:1px solid var(--line);padding:0 18px;display:flex;gap:8px;background:#0b1020ee;backdrop-filter:blur(10px)}
- nav button{display:flex;align-items:center;gap:6px;padding:12px 16px;font-size:13px;border-bottom:2px solid transparent}
- nav button span{font-size:16px}
- nav button.on{border-bottom-color:var(--gold)}
 }
+
+/* BACKGROUND STREAKS + FOOTER TAGLINE */
+body::before,body::after{content:"";position:fixed;bottom:0;width:min(46vw,380px);height:min(22vh,170px);pointer-events:none;z-index:0;opacity:.5}
+body::before{left:0;background:repeating-linear-gradient(115deg,transparent 0 14px,#1e6bff 14px 18px,transparent 18px 34px);-webkit-mask-image:linear-gradient(to top right,#000,transparent 70%);mask-image:linear-gradient(to top right,#000,transparent 70%)}
+body::after{right:0;background:repeating-linear-gradient(65deg,transparent 0 14px,#ff3b57 14px 17px,transparent 17px 36px);-webkit-mask-image:linear-gradient(to top left,#000,transparent 70%);mask-image:linear-gradient(to top left,#000,transparent 70%)}
+#app,.auth{position:relative;z-index:1}
+.tag{display:flex;align-items:center;justify-content:center;gap:14px;padding:18px 18px 8px}.tag span{width:28px;height:1px;background:#2c4a93}.tag i{font-weight:800;font-size:13px;letter-spacing:1.5px;text-align:center;line-height:1.25;color:#a9c4ff;transform:skewX(-8deg)}
+
+/* BRACKET (esports tree) */
+.bk-hint{margin:12px 2px 0;font-size:12px;color:var(--muted)}@media(min-width:720px){.bk-hint.few{display:none}}
+.bk-scroll{overflow-x:auto;overflow-y:hidden;padding:6px 2px 14px;-webkit-overflow-scrolling:touch;scroll-snap-type:x proximity}
+.bk{display:flex;gap:28px;align-items:stretch;width:max-content;min-width:100%}
+.bk-col{width:clamp(200px,68vw,240px);flex:none;display:flex;flex-direction:column;scroll-snap-align:start}
+.bk-ch{min-height:46px;padding:2px 2px 10px}.bk-ch b{display:block;font-size:17px;font-weight:900;letter-spacing:.5px;text-transform:uppercase;color:#fff;line-height:1.1}.bk-ch span{display:block;margin-top:3px;font-size:12px;font-weight:600;color:#7da3e8;letter-spacing:.4px}
+.bk-slots{flex:1;display:flex;flex-direction:column}
+.bk-slot{flex:1;min-height:118px;display:flex;align-items:center;position:relative}
+.bk-slot.c-top::after,.bk-slot.c-bot::after{content:"";position:absolute;right:-14px;width:14px;border:0 solid #1e6bff}
+.bk-slot.c-top::after{top:50%;bottom:0;border-top-width:2px;border-right-width:2px}
+.bk-slot.c-bot::after{top:0;bottom:calc(50% - 2px);border-bottom-width:2px;border-right-width:2px}
+.bk-slot.c-in::before{content:"";position:absolute;left:-14px;width:14px;top:50%;border-top:2px solid #1e6bff}
+.bk-m{width:100%;background:linear-gradient(180deg,#0f2152,#0a1a45);border:1px solid #1d3978;border-left:4px solid #1e6bff;border-radius:9px;padding:6px 10px;box-shadow:0 6px 16px rgba(0,0,0,.35)}
+.bk-m.final{border-color:#e0ab2f;box-shadow:0 0 0 1px #e0ab2f44,0 8px 22px rgba(224,171,47,.18)}
+.bk-r{display:flex;align-items:center;gap:8px;padding:4px 0;min-width:0}
+.bk-lg{width:28px;height:28px;flex:none;border-radius:50%;background:#16306b;color:#9cc2ff;display:grid;place-items:center;font-size:10px;font-weight:900;overflow:hidden}.bk-lg img{width:100%;height:100%;object-fit:cover}
+.bk-n{flex:1;min-width:0;font-weight:800;font-size:14px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bk-s{min-width:18px;text-align:right;font-weight:900;font-size:18px;color:#fff}
+.bk-r.lose .bk-n,.bk-r.lose .bk-s{color:#9db1dd;font-weight:700}
+.bk-vs{display:flex;align-items:center;gap:8px;color:#3ea0ff;font-size:10px;font-weight:900;letter-spacing:1px}.bk-vs i{flex:1;height:1px;background:#1d3978}
+.bk-meta{margin-top:4px;padding-top:5px;border-top:1px dashed #1d3978;font-size:11px;font-weight:700;color:#7da3e8}
+.bk-champ{position:absolute;left:50%;transform:translateX(-50%);top:calc(50% + 62px);width:min(100%,210px);aspect-ratio:200/190}
+.bk-champ svg{position:absolute;inset:0;width:100%;height:100%}
+.bk-champ div{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6% 10% 20%;text-align:center}
+.bk-champ .cr{font-size:34px;line-height:1;filter:drop-shadow(0 3px 6px rgba(255,200,60,.45))}
+.bk-champ b{margin-top:6px;font-size:18px;font-weight:900;letter-spacing:.5px;color:#ffc857}
+.bk-champ span{margin-top:3px;font-size:14px;font-weight:800;color:#fff;text-transform:uppercase;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bk-third{margin-top:8px;padding-top:16px;border-top:1px solid var(--line)}
+.bk-third-row{display:flex;gap:18px;align-items:center;flex-wrap:wrap}.bk-third-row .bk-m{width:min(100%,260px)}
+.bk-bronze{flex:1;min-width:190px;display:flex;flex-direction:column;align-items:center;text-align:center;padding:12px 14px;border:1.5px solid #b87333;border-radius:18px;background:linear-gradient(180deg,#1b1a2a,#0f1530)}
+.bk-bronze .tr{font-size:30px;line-height:1}.bk-bronze b{margin-top:4px;color:#e08a3c;font-size:15px;font-weight:900;letter-spacing:.5px}.bk-bronze span{margin-top:2px;color:#fff;font-weight:800;text-transform:uppercase}
 
 /* OFFLINE NOTICE */
 .offbar{background:#7a1f2b;color:#fff;text-align:center;font-size:12px;font-weight:700;padding:calc(7px + env(safe-area-inset-top)) 12px 7px}
@@ -160,9 +198,17 @@ select{width:100%;background:#0c1426;border:1px solid var(--line);border-radius:
 </section>
 
 <div id="app" class="hidden">
- <header><div><b id="ev">Rosabaya ML Tournament</b><small id="hi"></small></div><div><button class="ibtn" id="rf">⟳ Refresh</button> <button class="ibtn" id="lo">Logout</button></div></header>
- <nav id="nav"></nav>
+ <div class="top">
+  <header>
+   <img class="hd-logo" src="Gemini_Generated_Image_lzvitjlzvitjlzvi.jpg" alt="" onerror="this.style.display='none'">
+   <span class="hd-div"></span>
+   <div class="hd-t"><b id="ev">Rosabaya ML Tournament</b><small><span id="sub"></span><em id="hi"></em></small></div>
+   <div class="hd-act"><button class="ibtn" id="rf" title="Refresh" aria-label="Refresh">⟳</button><button class="ibtn" id="lo">Logout</button></div>
+  </header>
+  <nav id="nav"></nav>
+ </div>
  <main id="view"></main>
+ <div class="tag"><span></span><i>BIGGER DREAMS<br>STRONGER TOGETHER</i><span></span></div>
 </div>
 <div id="offAlert" class="modal hidden"><div class="offbox"><div style="font-size:44px">📡</div><h3>Walang internet connection</h3><p class="muted">Offline ka ngayon. Kailangan ng internet para mag-login at makita ang schedule, standings at results. I-connect muna ang data o Wi-Fi mo, tapos subukan ulit.</p><button class="btn" id="offOk">OK</button></div></div>
 <div id="modal" class="modal hidden"></div>
@@ -234,7 +280,7 @@ async function load(){$('view').innerHTML='<div class="empty">Loading...</div>';
  catch(e){if(e.message==='nologin'||/refresh|invalid|expired/i.test(e.message)){$('lo').onclick();return}D=null}
  render()}
 function start(){$('auth').classList.add('hidden');$('app').classList.remove('hidden');$('hi').textContent='Hi, '+(sess.name||'viewer');
- $('nav').innerHTML=TABS.map(t=>`<button data-t="${t[0]}"><span>${t[1]}</span>${t[2]}</button>`).join('');
+ $('nav').innerHTML=TABS.map(t=>`<button data-t="${t[0]}">${t[2]}</button>`).join('');
  $('nav').onclick=e=>{const b=e.target.closest('button');if(b){if(b.dataset.t===tab&&tab==='register')return;tab=b.dataset.t;render();scrollTo(0,0)}};load()}
 
 const team=id=>(D.teams||[]).find(t=>t.id===id);
@@ -302,6 +348,19 @@ function bracketCard(m){
  </div>`;
 }
 
+/* BRACKET (esports tree) */
+const isThird=m=>/third|3rd|bronze/i.test([m.section,m.round,m.label].filter(Boolean).join(' '));
+const bkLogo=t=>`<span class="bk-lg">${t&&t.logo?`<img src="${t.logo}" alt="">`:esc((t?.name||'?').slice(0,2).toUpperCase())}</span>`;
+function brkCard(m,final){
+ const w=m.winner,showScore=!!(m.a&&m.b&&(m.sa!==''||m.sb!==''||w));
+ const row=(k,sc)=>`<div class="bk-r${w&&w!==m[k]?' lose':''}">${bkLogo(team(m[k]))}<span class="bk-n">${esc(nm(m[k]))}</span>${showScore?`<span class="bk-s">${esc(m[sc]===''?0:m[sc])}</span>`:''}</div>`;
+ const meta=(!w&&(m.date||m.time))?`<div class="bk-meta">◷ ${esc(m.time||'TBA')}${m.date?' · '+esc(fmtD(m.date)):''}</div>`:'';
+ return `<div class="bk-m${final?' final':''}" title="${esc(m.label||'')}">${row('a','sa')}<div class="bk-vs"><i></i><span>VS</span><i></i></div>${row('b','sb')}${meta}</div>`;
+}
+function champBadge(t){
+ return `<div class="bk-champ"><svg viewBox="0 0 200 190" aria-hidden="true"><defs><linearGradient id="shG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#10224f"/><stop offset="1" stop-color="#091330"/></linearGradient></defs><path d="M6 6H194V132L100 184L6 132Z" fill="url(#shG)" stroke="#d9a42f" stroke-width="2.5" stroke-linejoin="round"/><path d="M14 14H186V128L100 174L14 128Z" fill="none" stroke="#d9a42f55" stroke-width="1"/></svg><div><span class="cr">👑</span><b>CHAMPION</b><span>${esc(t.name)}</span></div></div>`;
+}
+
 const V={
  schedule(){
   const l=(D.matches||[]).filter(m=>!m.winner&&(m.date||m.time||(m.a&&m.b))).sort((a,b)=>((a.date||'9999')+(a.time||'99:99')).localeCompare((b.date||'9999')+(b.time||'99:99')));
@@ -319,13 +378,29 @@ const V={
   return `<div class="sec-head"><b>MATCH RESULTS</b><span>${esc(D.eventName||'Rosabaya ML Tournament')}</span></div><div class="grid">${l.map(resultCard).join('')}</div>`;
  },
  bracket(){
-  if(!(D.matches||[]).length)return'<div class="empty">Wala pang bracket.</div>';
-  let out='',sec='';
-  D.matches.forEach(m=>{
-   if(m.section!==sec){if(sec)out+='</div>';out+=`<h2>${esc(m.section)}</h2><div class="grid brk-grid">`;sec=m.section}
-   out+=bracketCard(m);
-  });
-  return out+'</div>';
+  const all=D.matches||[];
+  if(!all.length)return'<div class="empty">Wala pang bracket.</div>';
+  const third=all.filter(isThird),main=all.filter(m=>!isThird(m)),secs=[];
+  main.forEach(m=>{const k=m.section||'Matches';let c=secs.find(x=>x.name===k);if(!c){c={name:k,list:[]};secs.push(c)}c.list.push(m)});
+  const last=secs.length-1,maxN=Math.max(1,...secs.map(c=>c.list.length));
+  const fm=last>=0&&secs[last].list.length===1?secs[last].list[0]:null;
+  const champ=fm&&fm.winner?team(fm.winner):null;
+  const colDate=l=>{const d=l.map(m=>m.date).filter(Boolean).sort()[0];return d?fmtD(d).toUpperCase():'&nbsp;'};
+  const cols=secs.map((c,ci)=>{
+   const feeds=ci<last&&c.list.length>1&&c.list.length===secs[ci+1].list.length*2;
+   const fed=ci>0&&secs[ci-1].list.length===c.list.length*2;
+   const slots=c.list.map((m,i)=>{
+    const isF=ci===last&&c.list.length===1;
+    return `<div class="bk-slot${feeds?(i%2?' c-bot':' c-top'):''}${fed?' c-in':''}">${brkCard(m,isF)}${isF&&champ?champBadge(champ):''}</div>`}).join('');
+   return `<div class="bk-col"><div class="bk-ch"><b>${esc(c.name)}</b><span>${colDate(c.list)}</span></div><div class="bk-slots">${slots}</div></div>`}).join('');
+  const extra=champ?Math.max(0,Math.round(maxN*118/2+62+200-maxN*118)):0;
+  let out=`<div class="bk-scroll"><div class="bk" style="padding-bottom:${extra}px">${cols}</div></div>`;
+  if(secs.length>1||extra)out+='<p class="bk-hint'+(secs.length<=3?' few':'')+'">↔ Mag-swipe pakaliwa/pakanan para makita ang buong bracket.</p>';
+  if(third.length){
+   const tm=third[0],tw=tm.winner?team(tm.winner):null;
+   out+=`<div class="bk-third"><div class="bk-ch"><b>THIRD PLACE MATCH</b><span>${colDate(third)}</span></div><div class="bk-third-row">${brkCard(tm,false)}${tw?`<div class="bk-bronze"><div class="tr">🏆</div><b>3RD PLACE</b><span>${esc(tw.name)}</span></div>`:''}</div></div>`;
+  }
+  return out;
  },
  teams(){
   return (D.teams||[]).length?`<div class="grid brk-grid" style="margin-top:14px">`+D.teams.map((t,i)=>`<div class="card"><button class="team-h" onclick="tg(${i})">${logo(t)}<div><strong>${esc(t.name)}</strong><small>Captain: ${esc(t.captain)} · ${t.players.length} players</small></div><span class="chev">${open[i]?'▲':'▼'}</span></button>${open[i]?`<div class="roster">${t.players.map((p,j)=>`<div class="pl" onclick="pp(${i},${j})">${p.photo?`<img class="ph" src="${p.photo}" alt="">`:`<div class="ph">${esc(p.name.slice(0,1).toUpperCase())}</div>`}<b>${esc(p.name)}</b><span class="role">${esc(p.role||'Flex')}</span></div>`).join('')}</div>`:''}</div>`).join('')+`</div>`:'<div class="empty">Wala pang teams.</div>';
@@ -365,6 +440,8 @@ $('goReg').onclick=()=>{$('auth').classList.add('hidden');$('regPub').classList.
 $('regBack').onclick=()=>{$('regPub').classList.add('hidden');$('regPubBody').innerHTML='';$('auth').classList.remove('hidden');checkOff(true)};
 
 function render(){document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===tab));
+ $('sub').textContent=(TABS.find(t=>t[0]===tab)||[])[2]||'';
+ {const nv=$('nav'),on=nv.querySelector('.on');if(on)nv.scrollTo({left:on.offsetLeft-(nv.clientWidth-on.offsetWidth)/2,behavior:'smooth'})}
  if(tab==='register'){$('view').innerHTML='<div class="card reg-wrap">'+regForm()+'</div>';bindReg($('view'));return}
  if(!D){$('view').innerHTML='<div class="empty">'+(navigator.onLine?'Wala pang na-publish na data. Subukan ulit mamaya.':'Walang internet connection. Subukan ulit pag online na.')+'</div>';return}
  $('ev').textContent=(D.eventName||'Rosabaya ML Tournament');
