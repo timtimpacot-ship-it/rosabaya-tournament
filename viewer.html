@@ -139,6 +139,23 @@ body::after{right:0;background:repeating-linear-gradient(65deg,transparent 0 14p
 .bk-bronze{flex:1;min-width:190px;display:flex;flex-direction:column;align-items:center;text-align:center;padding:12px 14px;border:1.5px solid #b87333;border-radius:18px;background:linear-gradient(180deg,#1b1a2a,#0f1530)}
 .bk-bronze .tr{font-size:30px;line-height:1}.bk-bronze b{margin-top:4px;color:#e08a3c;font-size:15px;font-weight:900;letter-spacing:.5px}.bk-bronze span{margin-top:2px;color:#fff;font-weight:800;text-transform:uppercase}
 
+/* ELIMINATED + TEAM HISTORY */
+.st-b{display:inline-block;margin-top:3px;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:900;letter-spacing:.8px;white-space:nowrap}
+.st-b.out{background:#3a1220;color:#ff7b8a;border:1px solid #7a2236}.st-b.champ{background:#3a2b08;color:#ffc857;border:1px solid #8a6a17}
+.tn{display:flex;flex-direction:column;align-items:flex-start;min-width:0}
+tr.clk{cursor:pointer}tr.clk:hover td{background:#0f2152}
+tr.out td:not(:nth-child(2)){opacity:.5}tr.out .lg{filter:grayscale(1);opacity:.6}tr.out .tn>span:first-child{color:#9db1dd}
+.hx-h{margin:16px 2px 8px;color:var(--cyan);font-size:11px;font-weight:900;letter-spacing:2px}
+.hx{display:flex;flex-direction:column;gap:8px}
+.hx-i{display:flex;align-items:center;gap:10px;background:#0c1426;border:1px solid #1b2f63;border-radius:10px;padding:8px 10px}
+.hx-r{width:26px;height:26px;flex:none;border-radius:7px;display:grid;place-items:center;font-size:12px;font-weight:900}.hx-r.w{background:#0f3a26;color:var(--green)}.hx-r.l{background:#3a1220;color:#ff7b8a}
+.hx-m{flex:1;min-width:0}.hx-m b{display:block;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.hx-m small{display:block;color:var(--muted);font-size:11px}
+.hx-s{font-size:16px;font-weight:900;white-space:nowrap}
+.tm-sheet{position:relative;background:linear-gradient(160deg,#0c1b45,#08122b);border:1px solid var(--line);border-top:3px solid var(--blue);border-radius:16px;width:min(100%,460px);max-height:86vh;overflow:auto;text-align:left;padding:18px}
+.tm-x{position:absolute;right:10px;top:10px;width:32px;height:32px;border-radius:50%;border:1px solid var(--line);background:#0d1a40;color:#fff;cursor:pointer}
+.tm-top{display:flex;align-items:center;gap:14px;padding-right:34px}.tm-top .lg{width:58px;height:58px;font-size:18px;border-radius:14px}.tm-top h3{margin:0 0 2px;font-size:20px}
+.tm-rec{display:flex;gap:8px;margin-top:14px}.tm-rec span{flex:1;text-align:center;background:#0c1426;border:1px solid #1b2f63;border-radius:10px;padding:8px 4px;font-size:10px;font-weight:800;letter-spacing:1px;color:var(--muted)}.tm-rec b{display:block;font-size:20px;color:#fff;letter-spacing:0}
+
 /* OFFLINE NOTICE */
 .offbar{background:#7a1f2b;color:#fff;text-align:center;font-size:12px;font-weight:700;padding:calc(7px + env(safe-area-inset-top)) 12px 7px}
 .offbox{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:24px 20px;max-width:340px;width:100%}
@@ -211,6 +228,7 @@ select{width:100%;background:#0c1426;border:1px solid var(--line);border-radius:
  <div class="tag"><span></span><i>BIGGER DREAMS<br>STRONGER TOGETHER</i><span></span></div>
 </div>
 <div id="offAlert" class="modal hidden"><div class="offbox"><div style="font-size:44px">📡</div><h3>Walang internet connection</h3><p class="muted">Offline ka ngayon. Kailangan ng internet para mag-login at makita ang schedule, standings at results. I-connect muna ang data o Wi-Fi mo, tapos subukan ulit.</p><button class="btn" id="offOk">OK</button></div></div>
+<div id="tmModal" class="modal hidden"><div class="tm-sheet" id="tmSheet"></div></div>
 <div id="modal" class="modal hidden"></div>
 
 <script>
@@ -251,7 +269,7 @@ select{width:100%;background:#0c1426;border:1px solid var(--line);border-radius:
 <script>
 const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const AU=RB.url+'/auth/v1',KEY='rb_viewer';
-let sess=null,D=null,mode='login',tab='schedule',open={};
+let sess=null,D=null,mode='login',tab='schedule',open={},userPicked=false,navKey='';
 try{sess=JSON.parse(localStorage.getItem(KEY))}catch(e){}
 const TABS=[['schedule','📅','Schedule'],['standings','🏆','Standings'],['results','✅','Results'],['bracket','🧩','Bracket'],['teams','👥','Teams'],['register','📝','Register']];
 
@@ -271,7 +289,7 @@ $('go').onclick=async()=>{const name=$('nm').value.trim(),pw=$('pw').value;$('er
   saveSess(j,name);start()}
  catch(e){const m=e.message;$('err').textContent=(!navigator.onLine||/failed to fetch|networkerror|load failed/i.test(m))?'Walang internet connection. I-connect muna ang data o Wi-Fi mo.':/already|registered/i.test(m)?'May gumagamit na ng pangalang iyan. Dagdagan ng apelyido o numero.':/invalid login/i.test(m)?'Mali ang pangalan o password.':m==='NOCONFIRM'?'Hindi pa naka-off ang email confirmation sa Supabase. Sabihan ang organizer.':m;}
  $('go').disabled=false};
-$('lo').onclick=()=>{localStorage.removeItem(KEY);sess=null;D=null;$('view').innerHTML='';$('app').classList.add('hidden');$('auth').classList.remove('hidden');checkOff(true)};
+$('lo').onclick=()=>{localStorage.removeItem(KEY);sess=null;D=null;userPicked=false;navKey='';$('view').innerHTML='';$('app').classList.add('hidden');$('auth').classList.remove('hidden');checkOff(true)};
 $('rf').onclick=()=>{if(tab!=='register')load()};
 
 async function load(){$('view').innerHTML='<div class="empty">Loading...</div>';
@@ -280,8 +298,8 @@ async function load(){$('view').innerHTML='<div class="empty">Loading...</div>';
  catch(e){if(e.message==='nologin'||/refresh|invalid|expired/i.test(e.message)){$('lo').onclick();return}D=null}
  render()}
 function start(){$('auth').classList.add('hidden');$('app').classList.remove('hidden');$('hi').textContent='Hi, '+(sess.name||'viewer');
- $('nav').innerHTML=TABS.map(t=>`<button data-t="${t[0]}">${t[2]}</button>`).join('');
- $('nav').onclick=e=>{const b=e.target.closest('button');if(b){if(b.dataset.t===tab&&tab==='register')return;tab=b.dataset.t;render();scrollTo(0,0)}};load()}
+ navKey='';renderNav();
+ $('nav').onclick=e=>{const b=e.target.closest('button');if(b){if(b.dataset.t===tab&&tab==='register')return;userPicked=true;tab=b.dataset.t;render();scrollTo(0,0)}};load()}
 
 const team=id=>(D.teams||[]).find(t=>t.id===id);
 const logo=t=>`<span class="lg">${t&&t.logo?`<img src="${t.logo}" alt="">`:esc((t?.name||'TBD').slice(0,2).toUpperCase())}</span>`;
@@ -361,16 +379,51 @@ function champBadge(t){
  return `<div class="bk-champ"><svg viewBox="0 0 200 190" aria-hidden="true"><defs><linearGradient id="shG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#10224f"/><stop offset="1" stop-color="#091330"/></linearGradient></defs><path d="M6 6H194V132L100 184L6 132Z" fill="url(#shG)" stroke="#d9a42f" stroke-width="2.5" stroke-linejoin="round"/><path d="M14 14H186V128L100 174L14 128Z" fill="none" stroke="#d9a42f55" stroke-width="1"/></svg><div><span class="cr">👑</span><b>CHAMPION</b><span>${esc(t.name)}</span></div></div>`;
 }
 
+/* SCHEDULE: only matches the admin gave a date AND a time */
+const sched=()=>(D&&D.matches||[]).filter(m=>!m.winner&&m.date&&m.time).sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));
+function renderNav(){
+ const v=TABS.filter(t=>t[0]!=='schedule'||(D&&sched().length));
+ if(!userPicked)tab=(D&&sched().length)?'schedule':'standings';
+ else if(!v.some(t=>t[0]===tab))tab=(v.find(t=>t[0]==='standings')||v[0])[0];
+ const k=v.map(t=>t[0]).join();
+ if(k!==navKey){navKey=k;$('nav').innerHTML=v.map(t=>`<button data-t="${t[0]}">${t[2]}</button>`).join('')}
+}
+
+/* ELIMINATED / CHAMPION + MATCH HISTORY */
+const KO=/quarter|semi|final|play-?off|knock-?out|lower|loser|round of|\bro\d+\b|\bqf\b|\bsf\b/i,NOKO=/upper|winner|group|round.?robin|swiss|league|regular|third|3rd|bronze/i;
+const mtxt=m=>[m.section,m.round,m.label].filter(Boolean).join(' ');
+const elimMatch=m=>done(m)&&KO.test(mtxt(m))&&!NOKO.test(mtxt(m));
+function champId(){
+ const main=(D.matches||[]).filter(m=>!isThird(m)),names=[];main.forEach(m=>{const k=m.section||'Matches';if(!names.includes(k))names.push(k)});
+ if(!names.length)return null;const l=main.filter(m=>(m.section||'Matches')===names[names.length-1]);
+ return l.length===1&&l[0].winner?l[0].winner:null}
+function teamState(t){
+ const lost=(D.matches||[]).find(m=>elimMatch(m)&&(m.a===t.id||m.b===t.id)&&m.winner!==t.id);
+ const champ=champId()===t.id;
+ return{champ,out:!champ&&(!!lost||t.eliminated===true),at:lost?(lost.section||lost.round||lost.label||''):''}}
+const stBadge=z=>z.champ?'<span class="st-b champ">👑 CHAMPION</span>':z.out?'<span class="st-b out">✖ ELIMINATED</span>':'';
+const histOf=t=>(D.matches||[]).filter(m=>done(m)&&(m.a===t.id||m.b===t.id)).sort((a,b)=>(a.date||'9999').localeCompare(b.date||'9999'));
+function histRows(t){
+ const l=histOf(t);if(!l.length)return'<p class="muted small" style="margin:6px 2px">Wala pang match history.</p>';
+ return'<div class="hx">'+l.map(m=>{const mine=m.a===t.id,opp=team(mine?m.b:m.a),win=m.winner===t.id,me=mine?m.sa:m.sb,op=mine?m.sb:m.sa;
+  const sub=[m.section,m.label&&m.label!==m.section?m.label:'',m.date?fmtD(m.date):''].filter(Boolean).join(' · ');
+  return`<div class="hx-i"><span class="hx-r ${win?'w':'l'}">${win?'W':'L'}</span>${logo(opp)}<div class="hx-m"><b>vs ${esc(opp?.name||'TBD')}</b><small>${esc(sub)}</small></div><b class="hx-s">${esc(me===''?0:me)} – ${esc(op===''?0:op)}</b></div>`}).join('')+'</div>'}
+function tm(i){
+ const t=D.teams[i];if(!t)return;const z=teamState(t),ms=histOf(t),w=ms.filter(m=>m.winner===t.id).length;
+ $('tmSheet').innerHTML=`<button class="tm-x" aria-label="Close">✕</button><div class="tm-top">${logo(t)}<div><h3>${esc(t.name)}</h3>${stBadge(z)}${z.out&&z.at?`<small class="muted" style="display:block;margin-top:3px">Natanggal sa ${esc(z.at)}</small>`:''}</div></div><div class="tm-rec"><span><b>${ms.length}</b>PLAYED</span><span><b>${w}</b>WIN</span><span><b>${ms.length-w}</b>LOSS</span></div><div class="hx-h">MATCH HISTORY</div>${histRows(t)}`;
+ $('tmModal').classList.remove('hidden')}
+$('tmModal').onclick=e=>{if(e.target===$('tmModal')||e.target.closest('.tm-x'))$('tmModal').classList.add('hidden')};
+
 const V={
  schedule(){
-  const l=(D.matches||[]).filter(m=>!m.winner&&(m.date||m.time||(m.a&&m.b))).sort((a,b)=>((a.date||'9999')+(a.time||'99:99')).localeCompare((b.date||'9999')+(b.time||'99:99')));
+  const l=sched();
   if(!l.length)return'<div class="empty">Wala pang naka-schedule na upcoming matches.</div>';
   return `<div class="sec-head"><b>UPCOMING</b><span>${esc(D.eventName||'Rosabaya ML Tournament')}</span></div><div class="grid">${l.map(upcomingCard).join('')}</div>`;
  },
  standings(){
   const ms=(D.matches||[]).filter(done);if(!(D.teams||[]).length)return'<div class="empty">Wala pang teams.</div>';
   const st=D.teams.map(t=>{const p=ms.filter(m=>m.a===t.id||m.b===t.id),w=p.filter(m=>m.winner===t.id).length;const gw=p.reduce((n,m)=>n+(Number(m.a===t.id?m.sa:m.sb)||0),0),gl=p.reduce((n,m)=>n+(Number(m.a===t.id?m.sb:m.sa)||0),0);return{t,p:p.length,w,l:p.length-w,d:gw-gl,pts:w*3}}).sort((a,b)=>b.pts-a.pts||b.w-a.w||b.d-a.d||a.t.name.localeCompare(b.t.name));
-  return`<div class="card" style="margin-top:14px"><table><thead><tr><th>#</th><th>TEAM</th><th>P</th><th>W</th><th>L</th><th>DIFF</th><th>PTS</th></tr></thead><tbody>${st.map((x,i)=>`<tr><td>${i+1}</td><td><div class="tm">${logo(x.t)}${esc(x.t.name)}</div></td><td>${x.p}</td><td>${x.w}</td><td>${x.l}</td><td>${x.d>0?'+':''}${x.d}</td><td class="pts">${x.pts}</td></tr>`).join('')}</tbody></table></div><p class="muted small" style="margin-top:10px">3 puntos sa bawat panalo.</p>`;
+  return`<div class="card" style="margin-top:14px"><table><thead><tr><th>#</th><th>TEAM</th><th>P</th><th>W</th><th>L</th><th>DIFF</th><th>PTS</th></tr></thead><tbody>${st.map((x,i)=>{const z=teamState(x.t);return `<tr class="clk${z.out?' out':''}" onclick="tm(${D.teams.indexOf(x.t)})"><td>${i+1}</td><td><div class="tm">${logo(x.t)}<div class="tn"><span>${esc(x.t.name)}</span>${stBadge(z)}</div></div></td><td>${x.p}</td><td>${x.w}</td><td>${x.l}</td><td>${x.d>0?'+':''}${x.d}</td><td class="pts">${x.pts}</td></tr>`}).join('')}</tbody></table></div><p class="muted small" style="margin-top:10px">3 puntos sa bawat panalo. Pindutin ang team para makita ang match history niya.</p>`;
  },
  results(){
   const l=(D.matches||[]).filter(done).reverse();
@@ -403,7 +456,7 @@ const V={
   return out;
  },
  teams(){
-  return (D.teams||[]).length?`<div class="grid brk-grid" style="margin-top:14px">`+D.teams.map((t,i)=>`<div class="card"><button class="team-h" onclick="tg(${i})">${logo(t)}<div><strong>${esc(t.name)}</strong><small>Captain: ${esc(t.captain)} · ${t.players.length} players</small></div><span class="chev">${open[i]?'▲':'▼'}</span></button>${open[i]?`<div class="roster">${t.players.map((p,j)=>`<div class="pl" onclick="pp(${i},${j})">${p.photo?`<img class="ph" src="${p.photo}" alt="">`:`<div class="ph">${esc(p.name.slice(0,1).toUpperCase())}</div>`}<b>${esc(p.name)}</b><span class="role">${esc(p.role||'Flex')}</span></div>`).join('')}</div>`:''}</div>`).join('')+`</div>`:'<div class="empty">Wala pang teams.</div>';
+  return (D.teams||[]).length?`<div class="grid brk-grid" style="margin-top:14px">`+D.teams.map((t,i)=>`<div class="card"><button class="team-h" onclick="tg(${i})">${logo(t)}<div><strong>${esc(t.name)}</strong><small>Captain: ${esc(t.captain)} · ${t.players.length} players</small>${stBadge(teamState(t))}</div><span class="chev">${open[i]?'▲':'▼'}</span></button>${open[i]?`<div class="roster">${t.players.map((p,j)=>`<div class="pl" onclick="pp(${i},${j})">${p.photo?`<img class="ph" src="${p.photo}" alt="">`:`<div class="ph">${esc(p.name.slice(0,1).toUpperCase())}</div>`}<b>${esc(p.name)}</b><span class="role">${esc(p.role||'Flex')}</span></div>`).join('')}</div><div class="hx-h">MATCH HISTORY</div>${histRows(t)}`:''}</div>`).join('')+`</div>`:'<div class="empty">Wala pang teams.</div>';
  }
 };
 /* REGISTER: one form, used in the "Register" tab and on the login screen */
@@ -439,7 +492,7 @@ function bindReg(root){
 $('goReg').onclick=()=>{$('auth').classList.add('hidden');$('regPub').classList.remove('hidden');$('regPubBody').innerHTML=regForm();bindReg($('regPubBody'));scrollTo(0,0);checkOff(true)};
 $('regBack').onclick=()=>{$('regPub').classList.add('hidden');$('regPubBody').innerHTML='';$('auth').classList.remove('hidden');checkOff(true)};
 
-function render(){document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===tab));
+function render(){renderNav();document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===tab));
  $('sub').textContent=(TABS.find(t=>t[0]===tab)||[])[2]||'';
  {const nv=$('nav'),on=nv.querySelector('.on');if(on)nv.scrollTo({left:on.offsetLeft-(nv.clientWidth-on.offsetWidth)/2,behavior:'smooth'})}
  if(tab==='register'){$('view').innerHTML='<div class="card reg-wrap">'+regForm()+'</div>';bindReg($('view'));return}
