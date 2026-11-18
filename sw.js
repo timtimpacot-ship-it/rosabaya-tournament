@@ -1,7 +1,7 @@
 /* Rosabaya ML Tournament - offline support.
    Keeps the page, intro video and logo on the phone so the app opens
    (intro -> login form) even without internet. Supabase data is never cached. */
-const CACHE = 'rosabaya-v1';
+const CACHE = 'rosabaya-v2';
 const CORE = [
   'viewer.html',
   'config.js',
@@ -38,8 +38,8 @@ async function rangeResponse(req) {
       res = net;
     } catch (err) { return new Response('', { status: 504 }); }
   }
-  const buf = await res.arrayBuffer();
-  const total = buf.byteLength;
+  const blob = await res.blob();           /* slices of a Blob are lazy: no copying the whole video for every range */
+  const total = blob.size;
   const m = /bytes=(\d*)-(\d*)/.exec(req.headers.get('range') || '');
   let start = 0, end = total - 1;
   if (m) {
@@ -47,7 +47,7 @@ async function rangeResponse(req) {
     else if (m[2] !== '') { start = total - +m[2]; }
   }
   end = Math.min(end, total - 1);
-  return new Response(buf.slice(start, end + 1), {
+  return new Response(blob.slice(start, end + 1), {
     status: 206,
     statusText: 'Partial Content',
     headers: {
