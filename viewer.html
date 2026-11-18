@@ -477,7 +477,7 @@ async function pollLive(){
  }catch(_){}}
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)pollLive()});
 function stopLive(){
- if(document.body.classList.contains('pfs-on')){document.body.classList.remove('pfs-on');window.rbCloseFs=null;try{screen.orientation&&screen.orientation.unlock&&screen.orientation.unlock()}catch(_){}if(history.state&&history.state.rb==='fs')history.back()}
+ if(document.body.classList.contains('pfs-on')){document.body.classList.remove('pfs-on');try{if(document.fullscreenElement||document.webkitFullscreenElement)(document.exitFullscreen||document.webkitExitFullscreen).call(document)}catch(_){}window.rbCloseFs=null;try{screen.orientation&&screen.orientation.unlock&&screen.orientation.unlock()}catch(_){}if(history.state&&history.state.rb==='fs')history.back()}
  if(lkRoom){const r=lkRoom;lkRoom=null;try{r.disconnect()}catch(_){}}
  document.querySelectorAll('audio[data-lk]').forEach(a=>a.remove())}
 function mountLive(){
@@ -491,8 +491,11 @@ function mountLive(){
   st.classList.toggle('pfs',on);document.body.classList.toggle('pfs-on',on);
   const fb=$('lvFs');if(fb){fb.textContent=on?'✕':'⛶';fb.setAttribute('aria-label',on?'Close fullscreen':'Fullscreen')}
   if(on){history.pushState({rb:'fs',tab:tab},'');
-   try{const o=screen.orientation;if(o&&o.lock)o.lock('landscape').catch(()=>{})}catch(_){}}
-  else{try{const o=screen.orientation;if(o&&o.unlock)o.unlock()}catch(_){}
+   /* try REAL fullscreen (hides status/nav bar); if the app/wrapper refuses, the overlay still works */
+   try{const rq=st.requestFullscreen||st.webkitRequestFullscreen;if(rq){const p=rq.call(st);if(p&&p.catch)p.catch(()=>{})}}catch(_){}
+   setTimeout(()=>{try{const o=screen.orientation;if(o&&o.lock)o.lock('landscape').catch(()=>{})}catch(_){}},150)}
+  else{try{if(document.fullscreenElement||document.webkitFullscreenElement)(document.exitFullscreen||document.webkitExitFullscreen).call(document)}catch(_){}
+   try{const o=screen.orientation;if(o&&o.unlock)o.unlock()}catch(_){}
    if(history.state&&history.state.rb==='fs')history.back()}
  };
  /* own fullscreen (CSS overlay): works inside any WebView app, Back/✕ close it without leaving the app */
@@ -688,6 +691,8 @@ if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol))navigator.s
   const s=history.state;if(s&&s.rb==='tab'&&s.tab===tab)return;
   history.pushState({rb:'tab',tab:tab},'');
  };
+ const onFsChange=()=>{if(!document.fullscreenElement&&!document.webkitFullscreenElement&&window.rbCloseFs)rbCloseFs()};
+ document.addEventListener('fullscreenchange',onFsChange);document.addEventListener('webkitfullscreenchange',onFsChange);
  addEventListener('popstate',e=>{
   const s=e.state||{};
   if(window.rbCloseFs&&rbCloseFs())return;        /* Back while fullscreen = just leave fullscreen */
