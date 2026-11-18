@@ -112,6 +112,9 @@ nav button[data-t=live].on{background:linear-gradient(180deg,#ff4d63,#c91d37);bo
 .live-msg{position:absolute;inset:0;display:grid;place-items:center;padding:20px;text-align:center;color:#cfe0ff;font-weight:700;background:#000000a8}.live-msg.hidden{display:none}
 .live-snd{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);width:auto;margin:0;padding:10px 16px;border-radius:999px;background:#fff;color:#111a2e;border:0;font-weight:900;white-space:nowrap}
 .live-fs{position:absolute;right:10px;top:10px;width:36px;height:36px;margin:0;padding:0;border-radius:8px;border:0;background:#000a;color:#fff;font-size:18px}
+.live-stage.pfs{position:fixed;left:0;top:0;right:0;bottom:0;width:100%;height:100vh;height:100dvh;max-height:none;aspect-ratio:auto!important;border-radius:0;z-index:300}
+.live-stage.pfs .live-fs{top:calc(10px + env(safe-area-inset-top));right:calc(10px + env(safe-area-inset-right));width:44px;height:44px;font-size:22px;background:#000c}
+body.pfs-on{overflow:hidden}
 /* LIVE end */
 /* BACKGROUND STREAKS + FOOTER TAGLINE */
 body::before,body::after{content:"";position:fixed;bottom:0;width:min(46vw,380px);height:min(22vh,170px);pointer-events:none;z-index:0;opacity:.5}
@@ -194,9 +197,7 @@ select{width:100%;background:#0c1426;border:1px solid var(--line);border-radius:
 #intro.out{opacity:0;pointer-events:none}
 #intro video{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;opacity:0;visibility:hidden;transition:opacity .6s ease;background:transparent}
 #intro video.show{opacity:1;visibility:visible}
-#introBg{object-fit:cover;filter:blur(28px) brightness(.8) saturate(1.2);transform:scale(1.25)}
-#introV{object-fit:contain;object-position:center center;
- -webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 3%,#000 97%,transparent 100%);mask-image:linear-gradient(to bottom,transparent 0,#000 3%,#000 97%,transparent 100%)}
+#introV{object-fit:contain;object-position:center center;background:#05070f}
 #intro video::-webkit-media-controls,#intro video::-webkit-media-controls-start-playback-button,#intro video::-webkit-media-controls-panel,#intro video::-webkit-media-controls-overlay-play-button{display:none!important;-webkit-appearance:none;opacity:0!important}
 #introLogoWrap{position:absolute;inset:0;z-index:3;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 45%,#1a2745 0,#05070f 70%);opacity:0;transition:opacity .8s ease}
 #introLogoWrap.show{opacity:1}
@@ -208,7 +209,6 @@ select{width:100%;background:#0c1426;border:1px solid var(--line);border-radius:
 </style></head><body>
 
 <div id="intro">
- <video id="introBg" src="Heroes_Intro3.mp4" muted autoplay playsinline webkit-playsinline preload="auto" disablePictureInPicture tabindex="-1"></video>
  <video id="introV" src="Heroes_Intro3.mp4" playsinline webkit-playsinline preload="auto" disablePictureInPicture controlsList="nodownload nofullscreen noremoteplayback" oncontextmenu="return false" tabindex="-1"></video>
  <div id="introLogoWrap"><img id="introLogo" src="Rosabaya_Logo.jpg" alt="Rosabaya"></div>
  <button id="introSnd" class="hidden">🔊 Sound</button>
@@ -253,37 +253,55 @@ select{width:100%;background:#0c1426;border:1px solid var(--line);border-radius:
 <div id="modal" class="modal hidden"></div>
 
 <script>
-/* INTRO: logo first (~2s), then the video, then fade into the app */
+/* INTRO: logo first (~2s), then the video ONLY if it is ready, then fade into the app.
+   Light version for mid-range phones: one video, no blur/mask, skips itself if the connection is slow. */
 (function(){
- const box=document.getElementById('intro'),v=document.getElementById('introV'),bg=document.getElementById('introBg'),
+ const box=document.getElementById('intro'),v=document.getElementById('introV'),
   lw=document.getElementById('introLogoWrap'),snd=document.getElementById('introSnd');
- let finished=false,guard,started=false;
- bg.pause();bg.removeAttribute('autoplay');
- function end(){if(finished)return;finished=true;clearTimeout(guard);try{v.pause();bg.pause()}catch(e){}box.classList.add('out');setTimeout(()=>{box.remove();window.afterIntro&&window.afterIntro()},800)}
- const HOLD=1000; /* ms to keep the last scene on screen so it can be read */
- let over=false;
+ const conn=navigator.connection||{};
+ const slow=!!conn.saveData||/^(slow-2g|2g|3g)$/.test(conn.effectiveType||'');
+ const LOGO_MS=2200,  /* logo shown at least this long */
+       READY_MS=5000, /* after the logo, wait this long for the video to be playable, else skip */
+       HOLD=1000;     /* keep last scene on screen */
+ let finished=false,started=false,over=false,guard,waitT;
+ function end(){
+  if(finished)return;finished=true;clearTimeout(guard);clearTimeout(waitT);
+  try{v.pause()}catch(e){}
+  box.classList.add('out');
+  setTimeout(()=>{
+   try{v.removeAttribute('src');v.load()}catch(e){} /* free the decoder + memory */
+   box.remove();window.afterIntro&&window.afterIntro();
+  },800);
+  /* save the video for offline in the background, only on a good connection */
+  if(!slow&&'serviceWorker' in navigator)navigator.serviceWorker.ready.then(r=>r.active&&r.active.postMessage('cache-video')).catch(()=>{});
+ }
  v.addEventListener('error',end);
  v.addEventListener('ended',()=>{over=true;clearTimeout(guard);guard=setTimeout(end,HOLD)});
  v.addEventListener('playing',()=>{
-  clearTimeout(guard);guard=setTimeout(end,((v.duration||10)+HOLD/1000+4)*1000);
-  v.classList.add('show');bg.classList.add('show');
-  try{bg.currentTime=v.currentTime;bg.play().catch(()=>{})}catch(e){}
+  clearTimeout(waitT);clearTimeout(guard);
+  guard=setTimeout(end,((v.duration||10)+HOLD/1000+4)*1000);
+  v.classList.add('show');
   setTimeout(()=>lw.classList.add('gone'),250);
  });
- v.addEventListener('pause',()=>{if(!finished&&!over&&!v.ended&&!(v.duration&&v.currentTime>=v.duration-0.15))v.play().catch(()=>{})});
+ v.addEventListener('pause',()=>{if(!finished&&!over&&!v.ended&&started&&!(v.duration&&v.currentTime>=v.duration-0.15)&&!document.hidden)v.play().catch(()=>{})});
  snd.onclick=()=>{v.muted=false;v.play().catch(()=>{});snd.classList.add('hidden')};
- function startVideo(){
-  if(started||finished)return;started=true;
-  guard=setTimeout(end,25000); /* video can't start (slow/missing): just open the app */
+ function play(){
+  if(finished||started)return;started=true;clearTimeout(waitT);
   v.muted=false;
   v.play().catch(()=>{v.muted=true;v.play().then(()=>snd.classList.remove('hidden')).catch(end)});
  }
- /* logo in */
+ function startVideo(){
+  if(finished||started)return;
+  if(slow){end();return}                      /* slow / data saver: skip the video */
+  if(v.readyState>=3){play();return}          /* already buffered enough */
+  v.addEventListener('canplay',play,{once:true});
+  waitT=setTimeout(end,READY_MS);             /* not ready in time: just open the app */
+ }
+ if(!slow){v.preload='auto';v.load()}          /* start buffering while the logo is showing */
  requestAnimationFrame(()=>requestAnimationFrame(()=>lw.classList.add('show')));
- /* if the logo file is missing, don't show a broken image */
  document.getElementById('introLogo').addEventListener('error',()=>{lw.style.display='none';startVideo()});
- /* start video after the logo has been shown ~2.2s */
- setTimeout(startVideo,2200);
+ setTimeout(startVideo,LOGO_MS);
+ guard=setTimeout(end,LOGO_MS+READY_MS+3000);  /* absolute safety net */
 })();
 </script>
 <script src="config.js"></script>
@@ -318,9 +336,9 @@ async function load(){$('view').innerHTML='<div class="empty">Loading...</div>';
   if(r.status===401){$('lo').onclick();return}const j=await r.json();D=j[0]?{...j[0].data,_at:j[0].updated_at}:null;}
  catch(e){if(e.message==='nologin'||/refresh|invalid|expired/i.test(e.message)){$('lo').onclick();return}D=null}
  render()}
-function start(){$('auth').classList.add('hidden');$('app').classList.remove('hidden');$('hi').textContent='Hi, '+(sess.name||'viewer');
+function start(){window.rbSeed&&rbSeed();$('auth').classList.add('hidden');$('app').classList.remove('hidden');$('hi').textContent='Hi, '+(sess.name||'viewer');
  navKey='';renderNav();
- $('nav').onclick=e=>{const b=e.target.closest('button');if(b){if(b.dataset.t===tab&&tab==='register')return;userPicked=true;tab=b.dataset.t;render();scrollTo(0,0)}};load();pollLive();clearInterval(liveTimer);liveTimer=setInterval(pollLive,15000)}
+ $('nav').onclick=e=>{const b=e.target.closest('button');if(b){if(b.dataset.t===tab&&tab==='register')return;userPicked=true;tab=b.dataset.t;render();scrollTo(0,0);window.rbPush&&rbPush()}};load();pollLive();clearInterval(liveTimer);liveTimer=setInterval(pollLive,15000)}
 
 const team=id=>(D.teams||[]).find(t=>t.id===id);
 const logo=t=>`<span class="lg">${t&&t.logo?`<img src="${t.logo}" alt="">`:esc((t?.name||'TBD').slice(0,2).toUpperCase())}</span>`;
@@ -445,7 +463,7 @@ function loadLK(){
  if(window.LivekitClient)return Promise.resolve();
  return lkLoading||(lkLoading=new Promise((res,rej)=>{const s=document.createElement('script');s.src=LK_SRC;s.onload=res;s.onerror=()=>{lkLoading=null;rej(new Error('sdk'))};document.head.appendChild(s)}))}
 function updLiveBar(){const b=$('liveBar'),show=LIVE.on&&tab!=='live';b.classList.toggle('hidden',!show);if(show)b.textContent='🔴 LIVE NA'+(LIVE.title?': '+LIVE.title:'')+' — Panoorin ›'}
-$('liveBar').onclick=()=>{userPicked=true;tab='live';render();scrollTo(0,0)};
+$('liveBar').onclick=()=>{userPicked=true;tab='live';render();scrollTo(0,0);window.rbPush&&rbPush()};
 async function pollLive(){
  if(!sess||document.hidden||!navigator.onLine)return;
  try{
@@ -459,6 +477,7 @@ async function pollLive(){
  }catch(_){}}
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)pollLive()});
 function stopLive(){
+ if(document.body.classList.contains('pfs-on')){document.body.classList.remove('pfs-on');window.rbCloseFs=null;try{screen.orientation&&screen.orientation.unlock&&screen.orientation.unlock()}catch(_){}if(history.state&&history.state.rb==='fs')history.back()}
  if(lkRoom){const r=lkRoom;lkRoom=null;try{r.disconnect()}catch(_){}}
  document.querySelectorAll('audio[data-lk]').forEach(a=>a.remove())}
 function mountLive(){
@@ -466,7 +485,19 @@ function mountLive(){
  $('view').innerHTML=`<div class="card live-wrap"><div class="live-hd"><span class="live-tag">● LIVE</span><b id="lvTitle">${esc(LIVE.title||'')}</b></div><div class="live-stage" id="lvStage"><video id="lvV" autoplay playsinline muted></video><div class="live-msg" id="lvMsg">Kumokonekta...</div><button type="button" class="live-snd hidden" id="lvSnd">🔊 I-tap para marinig</button><button type="button" class="live-fs" id="lvFs" aria-label="Fullscreen">⛶</button></div></div>`;
  const v=$('lvV'),st=$('lvStage'),fit=()=>{if(v.videoWidth&&v.videoHeight)st.style.aspectRatio=v.videoWidth+'/'+v.videoHeight};
  v.addEventListener('loadedmetadata',fit);v.addEventListener('resize',fit);
- $('lvFs').onclick=()=>{if(st.requestFullscreen)st.requestFullscreen();else if(st.webkitRequestFullscreen)st.webkitRequestFullscreen();else if(v.webkitEnterFullscreen)v.webkitEnterFullscreen()};
+ let pfs=false;
+ const setFs=on=>{
+  if(on===pfs)return;pfs=on;
+  st.classList.toggle('pfs',on);document.body.classList.toggle('pfs-on',on);
+  const fb=$('lvFs');if(fb){fb.textContent=on?'✕':'⛶';fb.setAttribute('aria-label',on?'Close fullscreen':'Fullscreen')}
+  if(on){history.pushState({rb:'fs',tab:tab},'');
+   try{const o=screen.orientation;if(o&&o.lock)o.lock('landscape').catch(()=>{})}catch(_){}}
+  else{try{const o=screen.orientation;if(o&&o.unlock)o.unlock()}catch(_){}
+   if(history.state&&history.state.rb==='fs')history.back()}
+ };
+ /* own fullscreen (CSS overlay): works inside any WebView app, Back/✕ close it without leaving the app */
+ $('lvFs').onclick=()=>setFs(!pfs);
+ window.rbCloseFs=()=>{if(!pfs)return false;setFs(false);return true};
  connectLive()}
 async function connectLive(){
  const msg=t=>{const m=$('lvMsg');if(m){m.textContent=t;m.classList.toggle('hidden',!t)}};
@@ -643,6 +674,28 @@ addEventListener('online',()=>checkOff(false));
 window.afterIntro=()=>checkOff(true);
 /* keep the page + intro video on the phone so it opens offline (needs https; first visit must be online) */
 if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol))navigator.serviceWorker.register('sw.js').catch(()=>{});
+
+/* BACK BUTTON + FULLSCREEN: give the single-page app real history entries so Back
+   exits fullscreen / goes to the previous tab instead of closing the app. */
+(function(){
+ window.rbSeed=function(){
+  const s=history.state;if(s&&s.rb)return;
+  history.replaceState({rb:'base'},'');
+  history.pushState({rb:'tab',tab:tab},'');
+ };
+ window.rbPush=function(){
+  if(!sess)return;rbSeed();
+  const s=history.state;if(s&&s.rb==='tab'&&s.tab===tab)return;
+  history.pushState({rb:'tab',tab:tab},'');
+ };
+ addEventListener('popstate',e=>{
+  const s=e.state||{};
+  if(window.rbCloseFs&&rbCloseFs())return;        /* Back while fullscreen = just leave fullscreen */
+  if(!sess)return;
+  if(s.rb==='base'||!s.rb){history.pushState({rb:'tab',tab:tab},'');return} /* at the dashboard: stay in the app */
+  if(s.rb==='tab'&&s.tab&&s.tab!==tab){userPicked=true;tab=s.tab;render();scrollTo(0,0)}
+ });
+})();
 
 if(sess)start();else $('auth').classList.remove('hidden');
 checkOff(true);
