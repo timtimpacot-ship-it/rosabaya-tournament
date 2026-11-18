@@ -282,6 +282,7 @@ header{display:none!important}main.wrap{width:auto!important;max-width:none!impo
     <button class="tab" data-tab="gallery" onclick="showTab('gallery')"><span>▧</span>Team Player Gallery</button>
     <button class="tab" data-tab="registrations" onclick="showTab('registrations')"><span>✎</span>Player Registrations</button>
     <button class="tab" data-tab="viewers" onclick="showTab('viewers')"><span>◉</span>Viewer Site</button>
+    <button class="tab" data-tab="live" onclick="showTab('live')"><span id="lsIcon">📡</span>Live Stream</button>
     <button class="tab" data-tab="bracket" onclick="showTab('bracket')"><span>♜</span>Tournament Bracket</button>
     <button class="tab" data-tab="schedule" onclick="showTab('schedule')"><span>▦</span>Match Schedule</button>
     <button class="tab" data-tab="results" onclick="showTab('results')"><span>◉</span>Match Results</button>
@@ -414,6 +415,18 @@ header{display:none!important}main.wrap{width:auto!important;max-width:none!impo
  <div class="formgrid"><div class="field"><label>TOURNAMENT NAME</label><input id="certificateEvent" placeholder="Tournament name" oninput="renderCertificate()"></div><div class="field"><label>AUTHORIZED SIGNATORY</label><input id="certificateSignatory" placeholder="Tournament Organizer" oninput="renderCertificate()"></div></div>
  <div class="formactions"><button class="btn" onclick="printCertificate()">🖨 Print Certificate</button><button class="btn secondary" onclick="setCertificateAward('champion')">Champion</button><button class="btn secondary" onclick="setCertificateAward('runnerup')">2nd Runner-up</button></div></div>
  <div id="certificatePreview" class="certificate-sheet"><div class="empty">Pumili ng team upang makita ang certificate preview.</div></div>
+</section>
+
+<section id="live" class="page hidden">
+ <style>.ls-prev{position:relative;background:#000;border-radius:12px;overflow:hidden;aspect-ratio:16/9;margin:16px 0;display:grid;place-items:center}.ls-prev video{width:100%;height:100%;object-fit:contain}.ls-prev .empty{position:absolute;background:none!important;border:0!important}#lsPill.on{color:#ff6b78;border-color:#ff6b78}</style>
+ <div class="hero"><div><div class="eyebrow">LIVE BROADCAST</div><h1>Live Stream</h1><p>Mag-live gamit ang camera o screen mo. Lalabas agad ang 🔴 LIVE tab sa viewer site ng mga naka-login.</p></div><span class="pill" id="lsPill">OFFLINE</span></div>
+ <div class="card"><h2>Go live</h2>
+  <div class="formgrid"><div class="field"><label>LIVE TITLE</label><input id="lsTitle" maxlength="80" placeholder="Hal. Grand Final Game 1"></div><div class="field"><label>SOURCE</label><select id="lsSource"><option value="camera">Camera + mic</option><option value="screen">Screen share (laro sa computer) + mic</option></select></div></div>
+  <div class="ls-prev"><video id="lsPrev" autoplay playsinline muted></video><div class="empty" id="lsEmpty">Dito lalabas ang preview ng live mo.</div></div>
+  <div class="formactions"><button class="btn" id="lsGo" onclick="lsGoLive()">🔴 Go Live</button><button class="btn danger" id="lsEnd" onclick="lsEndLive()" disabled>⏹ End Live</button></div>
+  <p class="smalltext" id="lsStatus" style="margin-top:10px"></p>
+ </div>
+ <div class="notice">Tips: Huwag isara ang tab na ito habang live (puwede kang lumipat ng ibang menu sa admin). Kailangan ng HTTPS at pahintulot sa camera/mic. Ang Screen share ay para sa computer lang, hindi sa phone. Kapag nawalan ng internet ang admin, kusang mawawala ang LIVE sa viewers pagkatapos ng mga 1 minuto.</div>
 </section>
 
 <section id="settings" class="page hidden">
@@ -890,6 +903,55 @@ window.drawRegQR=function(){$('regUrl').textContent=url();$('regUrl2').textConte
    st.textContent='Na-publish noong '+new Date().toLocaleString('en-PH')+' ('+(body.length/1024/1024).toFixed(1)+' MB)';toast('Na-publish na sa viewer site.')}
   catch(e){st.textContent='Hindi na-publish: '+e.message+'. I-check kung na-run ang supabase-viewer-setup.sql at tugma ang PIN.'}
   b.disabled=false};
+})();
+</script>
+
+<script>
+(function(){
+ let room=null,hb=null,tick=null,t0=0;
+ const LKSRC='https://cdn.jsdelivr.net/npm/livekit-client@2/dist/livekit-client.umd.min.js';
+ const loadLK=()=>window.LivekitClient?Promise.resolve():new Promise((res,rej)=>{const s=document.createElement('script');s.src=LKSRC;s.onload=res;s.onerror=()=>rej(new Error('Hindi ma-load ang LiveKit. I-check ang internet.'));document.head.appendChild(s)});
+ const rpc=(fn,body,keep)=>fetch(RB.url+'/rest/v1/rpc/'+fn,{method:'POST',keepalive:!!keep,headers:{apikey:RB.key,Authorization:'Bearer '+RB.key,'Content-Type':'application/json'},body:JSON.stringify(body)}).then(async r=>{const j=await r.json().catch(()=>null);if(!r.ok)throw Error((j&&j.message)||r.status);return j});
+ const setLive=(on,title,keep)=>rpc('set_live',{p_pin:data.pin,p_on:on,p_title:on?title:''},keep);
+ function ui(on){$('lsGo').disabled=on;$('lsEnd').disabled=!on;$('lsTitle').disabled=on;$('lsSource').disabled=on;const p=$('lsPill');p.textContent=on?'🔴 LIVE':'OFFLINE';p.classList.toggle('on',on);$('lsIcon').textContent=on?'🔴':'📡'}
+ const viewers=()=>room?((room.remoteParticipants||room.participants||new Map()).size):0;
+ function status(){const sec=Math.floor((Date.now()-t0)/1000),m=String(Math.floor(sec/60)).padStart(2,'0'),s=String(sec%60).padStart(2,'0'),n=viewers();$('lsStatus').textContent='LIVE · '+m+':'+s+' · '+n+' viewer'+(n===1?'':'s')+' na nanonood'}
+ async function cleanup(turnOff){
+  clearInterval(hb);clearInterval(tick);hb=tick=null;
+  const r=room;room=null;if(r){try{r.disconnect()}catch(_){}}
+  const v=$('lsPrev');try{v.srcObject=null}catch(_){}$('lsEmpty').classList.remove('hidden');
+  if(turnOff){try{await setLive(false,'')}catch(_){}}
+ }
+ window.lsGoLive=async function(){
+  const st=$('lsStatus'),title=$('lsTitle').value.trim()||'LIVE';
+  $('lsGo').disabled=true;st.textContent='Kumokonekta...';
+  try{
+   await loadLK();const L=window.LivekitClient;
+   const r=await fetch(RB.url+'/functions/v1/live-token',{method:'POST',headers:{apikey:RB.key,Authorization:'Bearer '+RB.key,'Content-Type':'application/json'},body:JSON.stringify({role:'publish',pin:data.pin})});
+   const j=await r.json().catch(()=>({}));if(!r.ok||!j.token)throw Error(j.error||('Token error '+r.status));
+   const rm=new L.Room({dynacast:true,adaptiveStream:true,publishDefaults:{simulcast:true,videoEncoding:{maxBitrate:1500000,maxFramerate:30}}});room=rm;
+   rm.on(L.RoomEvent.Disconnected,async()=>{if(room!==rm)return;await cleanup(true);ui(false);$('lsStatus').textContent='Nawala ang koneksyon. Tapos na ang live.'});
+   rm.on(L.RoomEvent.LocalTrackUnpublished,pub=>{if(room===rm&&pub&&pub.kind==='video'){lsEndLive(true)}});
+   await rm.connect(j.url,j.token);
+   const lp=rm.localParticipant;let pub;
+   if($('lsSource').value==='screen'){pub=await lp.setScreenShareEnabled(true,{audio:true});try{await lp.setMicrophoneEnabled(true)}catch(_){}}
+   else{pub=await lp.setCameraEnabled(true);try{await lp.setMicrophoneEnabled(true)}catch(_){}}
+   if(pub&&pub.track)pub.track.attach($('lsPrev'));
+   $('lsEmpty').classList.add('hidden');
+   await setLive(true,title);
+   hb=setInterval(()=>setLive(true,title).catch(()=>{}),20000);
+   t0=Date.now();tick=setInterval(status,1000);status();ui(true);toast('LIVE ka na!');
+  }catch(e){
+   await cleanup(false);ui(false);
+   const m=(e&&e.name==='NotAllowedError')?'Hindi pinayagan ang camera/mic/screen. I-allow sa browser.':(e&&e.name==='NotFoundError')?'Walang nakitang camera o mic.':e.message;
+   st.textContent='Hindi nakapag-live: '+m+(/set_live|function|schema/i.test(m)?' (I-run ang live_setup.sql sa Supabase.)':'')
+  }
+ };
+ window.lsEndLive=async function(silent){
+  if(!silent&&!confirm('Tapusin ang live?'))return;
+  await cleanup(true);ui(false);$('lsStatus').textContent='Tapos na ang live.';if(!silent)toast('Live ended.');
+ };
+ addEventListener('pagehide',()=>{if(room)setLive(false,'',true).catch(()=>{})});
 })();
 </script>
 </body>
