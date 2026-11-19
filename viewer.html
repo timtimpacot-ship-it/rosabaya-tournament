@@ -586,14 +586,11 @@ const V={
 };
 /* REGISTER: Player + Team forms (Register tab and login screen) */
 let regMode='player',lastTeam='';
-const TKEY='rb_teams';
+/* Dropdown = ONLY teams that registered through Team Registration (live from the database, never a saved copy). */
 async function getTeams(){
- const m=new Map(),add=n=>{n=(n||'').trim();if(n)m.set(n.toLowerCase(),n)};
- (D&&D.teams||[]).forEach(t=>add(t.name));
- try{const r=await fetch(RB.url+'/rest/v1/public_team_names?select=name&order=name',{headers:{apikey:RB.key,Authorization:'Bearer '+RB.key}});
-  if(!r.ok)throw 0;(await r.json()).forEach(x=>add(x.name));localStorage.setItem(TKEY,JSON.stringify([...m.values()]))}
- catch(e){try{JSON.parse(localStorage.getItem(TKEY)||'[]').forEach(add)}catch(_){}}
- add(lastTeam);
+ const r=await fetch(RB.url+'/rest/v1/public_team_names?select=name&order=name',{cache:'no-store',headers:{apikey:RB.key,Authorization:'Bearer '+RB.key}});
+ if(!r.ok)throw new Error('teams');
+ const m=new Map();(await r.json()).forEach(x=>{const n=String(x.name||'').trim();if(n)m.set(n.toLowerCase(),n)});
  return[...m.values()].sort((x,y)=>x.localeCompare(y,undefined,{sensitivity:'base'}))}
 const picField=(label,req)=>`<label>${label}</label><div class="reg-pic"><div class="reg-prev">${req?'IGN':'LOGO'}</div><input name="photo" type="file" accept="image/*"${req?' required':''}></div>`;
 function playerFormHTML(){return `<form class="reg-form" data-kind="player" autocomplete="off">
@@ -628,11 +625,14 @@ function bindReg(root,wrap){
  const f=root.querySelector('.reg-form');if(!f)return;
  const kind=f.dataset.kind,prev=f.querySelector('.reg-prev'),m=f.querySelector('.reg-msg'),btn=f.querySelector('button[type=submit]'),ph=f.elements['photo'],idle=btn.textContent;
  ph.onchange=()=>{const x=ph.files[0];if(!x)return;const im=new Image();im.src=URL.createObjectURL(x);prev.textContent='';prev.appendChild(im)};
- if(kind==='player')getTeams().then(list=>{
-  const sel=f.elements['team'];if(!sel||sel.tagName!=='SELECT')return;
-  if(!list.length){const inp=document.createElement('input');inp.name='team';inp.required=true;inp.maxLength=60;inp.placeholder='Eksaktong pangalan ng team mo';sel.replaceWith(inp);return}
-  sel.innerHTML='<option value="">Pumili ng team</option>'+list.map(n=>`<option>${esc(n)}</option>`).join('');
-  if(lastTeam)sel.value=lastTeam});
+ if(kind==='player'){
+  const noTeams=txt=>{const sel=f.elements['team'];if(sel&&sel.tagName==='SELECT'){sel.innerHTML='<option value="">'+txt+'</option>';sel.required=false;sel.disabled=true}
+   const sb=f.querySelector('button[type=submit]');if(sb)sb.disabled=true};
+  getTeams().then(list=>{
+   const sel=f.elements['team'];if(!sel||sel.tagName!=='SELECT')return;
+   if(!list.length){noTeams('Wala pang naka-register na team');return}
+   sel.innerHTML='<option value="">Pumili ng team</option>'+list.map(n=>`<option>${esc(n)}</option>`).join('');
+   if(lastTeam)sel.value=lastTeam}).catch(()=>noTeams(navigator.onLine?'Hindi ma-load ang teams. Subukan ulit.':'Walang internet connection.'))}
  f.onsubmit=async e=>{e.preventDefault();m.className='reg-msg';m.textContent='';
   if(f.elements['bot-field'].value)return;
   btn.disabled=true;btn.textContent='Ipinapadala...';
