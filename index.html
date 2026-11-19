@@ -445,7 +445,7 @@ const KEY='rosabaya_ml_manager_v1';
 let data={pin:'2468',eventName:'Rosabaya ML Tournament',season:'2026',teams:[],bracket:[],doubleElim:null,generated:false,liveMatch:{matchId:'',status:'UPCOMING',streamUrl:'',bestOf:3,scoreA:0,scoreB:0}};
 const $=id=>document.getElementById(id);
 function load(){try{const x=JSON.parse(localStorage.getItem(KEY));if(x&&Array.isArray(x.teams)){data={...data,...x,liveMatch:{matchId:'',status:'UPCOMING',streamUrl:'',bestOf:3,scoreA:0,scoreB:0,...(x.liveMatch||{})}};data.teams=data.teams.map(t=>({...t,players:(t.players||[]).map(p=>{if(!p||typeof p!=='object')return p;return {...p,role:p.role==='Assassin'?'Core':p.role==='Support'?'Flex':p.role}})}));}}catch(e){}if(data.teams.length>=2&&!data.generated){buildDoubleElim();try{localStorage.setItem(KEY,JSON.stringify(data))}catch(err){console.error(err)}}}
-function persist(){try{localStorage.setItem(KEY,JSON.stringify(data))}catch(err){console.error('Local storage save failed:',err);toast('Na-save sa kasalukuyang session pero hindi ma-save sa browser storage. Bawasan ang laki/bilang ng uploaded photos.')}try{renderAll()}catch(err){console.error('Dashboard refresh failed:',err);toast('Na-save ang data pero may display error. I-refresh ang page.')}}
+function persist(){try{localStorage.setItem(KEY,JSON.stringify(data))}catch(err){console.error('Local storage save failed:',err);toast('Na-save sa kasalukuyang session pero hindi ma-save sa browser storage. Bawasan ang laki/bilang ng uploaded photos.')}try{renderAll()}catch(err){console.error('Dashboard refresh failed:',err);toast('Na-save ang data pero may display error. I-refresh ang page.')}teamSync()}
 function toast(msg){$('toast').textContent=msg;$('toast').classList.remove('hidden');setTimeout(()=>$('toast').classList.add('hidden'),2400)}
 function login(){if($('pinInput').value===data.pin){sessionStorage.setItem('rosabayaAdmin','yes');$('loginScreen').classList.add('hidden');$('app').classList.remove('hidden');renderAll()}else $('loginError').textContent='Incorrect PIN. Please try again.'}
 function logout(){sessionStorage.removeItem('rosabayaAdmin');$('app').classList.add('hidden');$('loginScreen').classList.remove('hidden');$('pinInput').value=''}
@@ -533,6 +533,16 @@ async function saveTeam(e){
 }
 function resetTeamForm(){const form=$('teamForm');if(form)form.reset();['teamName','captain','players','teamLogo','teamGroupPhoto','editId'].forEach(id=>{const el=$(id);if(el)el.value=''});$('playerPhotoFields').innerHTML='';if($('teamGroupPhotoPreview'))$('teamGroupPhotoPreview').innerHTML='';$('formTitle').textContent='Register a team';$('saveTeamBtn').textContent='＋ Add team';$('cancelEdit').classList.add('hidden');$('teamName').focus();}
 function editTeam(id){const t=data.teams.find(x=>x.id===id);if(!t)return;$('editId').value=id;$('teamName').value=t.name;$('captain').value=t.captain;$('players').value=t.players.map(playerName).join('\n');renderPlayerPhotoInputs(t.players);$('formTitle').textContent='Edit team';$('saveTeamBtn').textContent='Save changes';$('cancelEdit').classList.remove('hidden');window.scrollTo({top:0,behavior:'smooth'})}
+/* Teams added in the admin panel also go to the public team list (Player Registration dropdown, outside and inside the app). */
+let _tsig=null;
+function teamSync(){
+ try{const names=(data.teams||[]).map(t=>String(t.name||'').trim()).filter(Boolean);
+  const sig=names.map(n=>n.toLowerCase()).sort().join('|');
+  if(sig===_tsig)return;
+  if(_tsig===null&&!names.length){_tsig='';return}   /* empty admin on first load: never wipe the list */
+  _tsig=sig;
+  fetch(RB.url+'/rest/v1/rpc/sync_admin_teams',{method:'POST',keepalive:true,headers:{apikey:RB.key,Authorization:'Bearer '+RB.key,'Content-Type':'application/json'},body:JSON.stringify({p_pin:data.pin,p_names:names})}).then(r=>{if(!r.ok)_tsig=null}).catch(()=>{_tsig=null})}catch(_){_tsig=null}}
+setTimeout(()=>{try{teamSync()}catch(_){}},1500);
 function teamRegCleanup(name){ /* also remove the team from the public Team Registration list (dropdown) */
  try{fetch(RB.url+'/rest/v1/rpc/'+(name?'delete_team_registration':'clear_team_registrations'),{method:'POST',keepalive:true,headers:{apikey:RB.key,Authorization:'Bearer '+RB.key,'Content-Type':'application/json'},body:JSON.stringify(name?{p_pin:data.pin,p_name:name}:{p_pin:data.pin})}).catch(()=>{})}catch(_){}}
 function deleteTeam(id){const t=data.teams.find(x=>x.id===id);if(!t||!confirm('Delete '+t.name+'?'))return;data.teams=data.teams.filter(x=>x.id!==id);teamRegCleanup(t.name);persist();toast('Team removed.')}
