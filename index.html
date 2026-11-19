@@ -541,7 +541,8 @@ function teamSync(){
   if(sig===_tsig)return;
   if(_tsig===null&&!names.length){_tsig='';return}   /* empty admin on first load: never wipe the list */
   _tsig=sig;
-  fetch(RB.url+'/rest/v1/rpc/sync_admin_teams',{method:'POST',keepalive:true,headers:{apikey:RB.key,Authorization:'Bearer '+RB.key,'Content-Type':'application/json'},body:JSON.stringify({p_pin:data.pin,p_names:names})}).then(r=>{if(!r.ok)_tsig=null}).catch(()=>{_tsig=null})}catch(_){_tsig=null}}
+  fetch(RB.url+'/rest/v1/rpc/sync_admin_teams',{method:'POST',keepalive:true,headers:{apikey:RB.key,Authorization:'Bearer '+RB.key,'Content-Type':'application/json'},body:JSON.stringify({p_pin:data.pin,p_names:names})}).then(async r=>{if(r.ok)return;_tsig=null;const j=await r.json().catch(()=>null);const m=(j&&(j.message||j.hint))||('error '+r.status);
+   toast('Hindi na-send ang teams sa public list ng Player Registration: '+m+(r.status===404?' (i-run ang team_registration_setup.sql sa Supabase)':''))}).catch(()=>{_tsig=null})}catch(_){_tsig=null}}
 setTimeout(()=>{try{teamSync()}catch(_){}},1500);
 function teamRegCleanup(name){ /* also remove the team from the public Team Registration list (dropdown) */
  try{fetch(RB.url+'/rest/v1/rpc/'+(name?'delete_team_registration':'clear_team_registrations'),{method:'POST',keepalive:true,headers:{apikey:RB.key,Authorization:'Bearer '+RB.key,'Content-Type':'application/json'},body:JSON.stringify(name?{p_pin:data.pin,p_name:name}:{p_pin:data.pin})}).catch(()=>{})}catch(_){}}
