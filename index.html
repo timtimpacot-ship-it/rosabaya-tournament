@@ -366,7 +366,7 @@ header{display:none!important}main.wrap{width:auto!important;max-width:none!impo
  <div class="formgrid">
   <div class="field"><label>TEAM NAME *</label><input id="teamName" required maxlength="40" placeholder="e.g. Rosabaya Legends"></div>
   <div class="field"><label>TEAM CAPTAIN *</label><input id="captain" required maxlength="50" placeholder="Captain's full name"></div>
-  <div class="field full"><label>PLAYER ROSTER (5 starters, one name per line) *</label><textarea id="players" required oninput="renderPlayerPhotoInputs()" placeholder="Player 1&#10;Player 2&#10;Player 3&#10;Player 4&#10;Player 5"></textarea><span class="smalltext">Maglagay ng 5 player names, tig-iisang pangalan bawat linya. Puwedeng may reserve sa susunod na linya.</span><div id="playerPhotoFields"></div><span class="smalltext">Pumili ng ML role at mag-upload ng individual picture para sa bawat player. Lalabas ang photo at role sa dashboard.</span></div>
+  <div class="field full"><label>PLAYER ROSTER (5 starters, one name per line) *</label><textarea id="players" oninput="renderPlayerPhotoInputs()" placeholder="Player 1&#10;Player 2&#10;Player 3&#10;Player 4&#10;Player 5"></textarea><span class="smalltext">Maglagay ng 5 player names, tig-iisang pangalan bawat linya. Puwedeng may reserve sa susunod na linya.</span><div id="playerPhotoFields"></div><span class="smalltext">Pumili ng ML role at mag-upload ng individual picture para sa bawat player. Lalabas ang photo at role sa dashboard.</span></div>
   <div class="field full"><label>TEAM GROUP PHOTO (optional)</label><input id="teamGroupPhoto" type="file" accept="image/*" onchange="previewTeamGroupPhoto(event)"><span class="smalltext">Mag-upload ng isang group picture ng buong team. Ito ang magiging background photo ng Registered Team card at gagamitin din sa Dashboard Match Result kapag nanalo ang team.</span><div id="teamGroupPhotoPreview" class="team-group-upload-preview"></div></div>
   <div class="field full"><label>TEAM LOGO (optional)</label><input id="teamLogo" type="file" accept="image/*"><span class="smalltext">Image file is stored in this browser's local data.</span></div>
  </div><div class="formactions"><button class="btn" type="submit" id="saveTeamBtn">＋ Add team</button><button class="btn secondary hidden" type="button" id="cancelEdit" onclick="resetTeamForm()">Cancel edit</button></div>
@@ -440,6 +440,22 @@ header{display:none!important}main.wrap{width:auto!important;max-width:none!impo
 </main><div class="footer">© <span id="footerYear">2026</span> Rosabaya Distributor Inc. · ML Tournament Manager</div>
 </div><div id="toast" class="toast hidden"></div>
 <div id="playerGalleryModal" class="player-gallery-modal hidden" role="dialog" aria-modal="true" aria-labelledby="playerGalleryName" onclick="if(event.target===this)closePlayerGallery()"><div class="player-gallery-dialog"><button class="player-gallery-close" type="button" aria-label="Close player details" onclick="closePlayerGallery()">×</button><div class="player-gallery-image-wrap"><img id="playerGalleryImage" alt="Full-size player photo"><div id="playerGalleryPlaceholder" class="player-gallery-placeholder hidden"></div></div><div class="player-gallery-details"><div class="player-gallery-kicker">PLAYER PROFILE</div><h2 id="playerGalleryName"></h2><div class="player-gallery-role" id="playerGalleryRole"></div><div class="player-gallery-meta"><div><span>TEAM</span><strong id="playerGalleryTeam"></strong></div><div><span>TEAM CAPTAIN</span><strong id="playerGalleryCaptain"></strong></div></div><p class="player-gallery-tip">Mas malinaw na view ng player photo at profile details.</p></div></div></div>
+<div id="teamMgr" class="player-gallery-modal hidden" role="dialog" aria-modal="true" onclick="if(event.target===this)closeMgr()"><div class="tmgr"><button class="tmgr-x" type="button" aria-label="Close" onclick="closeMgr()">×</button><div id="teamMgrBody"></div></div></div>
+<style>
+.tmgr{position:relative;width:min(640px,100%);max-height:92vh;overflow:auto;background:#0b1530;border:1px solid #2b4a8f;border-top:3px solid #1e6bff;border-radius:18px;padding:20px;color:#fff;text-align:left}
+.tmgr h2{margin:0 0 2px;font-size:22px}.tmgr small{color:#9db1dd}
+.tmgr-x{position:absolute;right:12px;top:10px;width:34px;height:34px;border-radius:50%;border:1px solid #2b4a8f;background:#0d1a40;color:#fff;font-size:20px;cursor:pointer;line-height:1}
+.tmgr-head{display:flex;gap:14px;align-items:center;padding-right:44px;margin-bottom:4px}.tmgr-head .logo{flex:none}
+.tmgr-sec{margin:22px 0 10px;color:#4cc9ff;font-weight:900;letter-spacing:2px;font-size:12px}
+.tmgr-p{display:flex;gap:12px;align-items:center;background:#0c1426;border:1px solid #1b2f63;border-radius:12px;padding:10px;margin-bottom:8px}
+.tmgr-av{position:relative;flex:none;width:60px;height:60px;border-radius:50%;background:#304466;display:grid;place-items:center;font-weight:900;font-size:20px;color:#ffc857;cursor:pointer;overflow:hidden;border:2px solid #2b4a8f}
+.tmgr-av img{width:100%;height:100%;object-fit:cover;display:block}
+.tmgr-av .cam{position:absolute;left:0;right:0;bottom:0;background:#000b;font-size:12px;font-weight:700;text-align:center;padding:2px 0;color:#fff}
+.tmgr-pf{flex:1;min-width:0;display:grid;gap:6px}.tmgr-pf input,.tmgr-pf select{width:100%}
+.tmgr-add{background:#0c1426;border:1px dashed #2b4a8f;border-radius:12px;padding:12px;display:grid;gap:8px}
+.tmgr .btn{width:auto}
+@media(max-width:560px){.tmgr-p{flex-wrap:wrap}.tmgr-pa{width:100%}.tmgr-pa .btn{width:100%}}
+</style>
 <script>
 const KEY='rosabaya_ml_manager_v1';
 let data={pin:'2468',eventName:'Rosabaya ML Tournament',season:'2026',teams:[],bracket:[],doubleElim:null,generated:false,liveMatch:{matchId:'',status:'UPCOMING',streamUrl:'',bestOf:3,scoreA:0,scoreB:0}};
@@ -501,7 +517,7 @@ async function saveTeam(e){
  const id=$('editId').value,name=$('teamName').value.trim(),captain=$('captain').value.trim();
  const names=$('players').value.split('\n').map(x=>x.trim()).filter(Boolean);
  if(!name||!captain){toast('Ilagay ang team name at captain.');return}
- if(names.length<5){toast('Kailangan ng hindi bababa sa 5 player names.');return}
+ if(names.length<5&&!id){toast('Kailangan ng hindi bababa sa 5 player names.');return}
  if(data.teams.some(t=>t.name.toLowerCase()===name.toLowerCase()&&t.id!==id)){toast('May team na kapareho ang pangalan.');return}
  try{
   const old=data.teams.find(t=>t.id===id);
@@ -547,7 +563,66 @@ setTimeout(()=>{try{teamSync()}catch(_){}},1500);
 function teamRegCleanup(name){ /* also remove the team from the public Team Registration list (dropdown) */
  try{fetch(RB.url+'/rest/v1/rpc/'+(name?'delete_team_registration':'clear_team_registrations'),{method:'POST',keepalive:true,headers:{apikey:RB.key,Authorization:'Bearer '+RB.key,'Content-Type':'application/json'},body:JSON.stringify(name?{p_pin:data.pin,p_name:name}:{p_pin:data.pin})}).catch(()=>{})}catch(_){}}
 function deleteTeam(id){const t=data.teams.find(x=>x.id===id);if(!t||!confirm('Delete '+t.name+'?'))return;data.teams=data.teams.filter(x=>x.id!==id);teamRegCleanup(t.name);persist();toast('Team removed.')}
-function teamCard(t){return `<article class="team team-group-card" style="${t.groupPhoto?`--team-group-bg:url(&quot;${t.groupPhoto}&quot;)`:''}"><div class="team-group-shade"></div><div class="team-group-content"><div class="logo">${t.logo?`<img src="${t.logo}">`:esc(t.name.slice(0,2).toUpperCase())}</div><div class="teaminfo"><strong>${esc(t.name)}</strong><small>Captain: ${esc(t.captain)} · ${t.players.length} players</small><div class="player-strip">${t.players.map(p=>`<span class="player-chip">${playerPhoto(p)?`<img src="${playerPhoto(p)}" alt="">`:`<span class="player-avatar">${esc(playerName(p).slice(0,1).toUpperCase())}</span>`}${esc(playerName(p))}</span>`).join('')}</div><span class="team-group-photo-tag">${t.groupPhoto?'TEAM GROUP PHOTO':'NO GROUP PHOTO'}</span></div><div class="teamtools"><button class="btn secondary small" onclick="editTeam('${t.id}')">Edit</button><button class="btn danger small" onclick="deleteTeam('${t.id}')">×</button></div></div></article>`}
+
+/* ---- Manage players (edit / delete / change picture) for registered teams ---- */
+let mgrId=null;
+const MG_ROLES=['Tank','Fighter','Core','Mage','Marksman','Flex'];
+function mgrTeam(){return data.teams.find(x=>x.id===mgrId)}
+function manageTeam(id){mgrId=id;renderMgr();$('teamMgr').classList.remove('hidden');document.body.style.overflow='hidden'}
+function closeMgr(){$('teamMgr').classList.add('hidden');document.body.style.overflow='';mgrId=null}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('teamMgr')&&!$('teamMgr').classList.contains('hidden'))closeMgr()});
+function mgPlayerObj(t,i){const p=t.players[i];if(typeof p==='string'){t.players[i]={id:uid(),name:p,photo:'',role:'Flex'}}return t.players[i]}
+function renderMgr(){
+ const t=mgrTeam();if(!t){closeMgr();return}
+ const roleOpts=sel=>MG_ROLES.map(r=>`<option value="${r}"${sel===r?' selected':''}>${r}</option>`).join('');
+ const rows=t.players.map((p,i)=>{const n=playerName(p),ph=playerPhoto(p),role=typeof p==='string'?'Flex':(p.role||'Flex');
+  return `<div class="tmgr-p"><label class="tmgr-av" title="Palitan ang picture">${ph?`<img src="${esc(ph)}" alt="">`:esc(n.slice(0,1).toUpperCase())}<span class="cam">📷</span><input type="file" accept="image/*" hidden onchange="mgPhoto(${i},this)"></label><div class="tmgr-pf"><input id="mgPN${i}" value="${esc(n)}" maxlength="40" aria-label="Player name" onchange="mgPlayer(${i})"><select id="mgPR${i}" aria-label="Role" onchange="mgPlayer(${i})">${roleOpts(role)}</select></div><div class="tmgr-pa"><button class="btn danger small" type="button" onclick="mgDel(${i})">🗑 Delete</button></div></div>`}).join('');
+ $('teamMgrBody').innerHTML=`<div class="tmgr-head"><div class="logo">${t.logo?`<img src="${esc(t.logo)}">`:esc(t.name.slice(0,2).toUpperCase())}</div><div><h2>${esc(t.name)}</h2><small>Captain: ${esc(t.captain)} · ${t.players.length} players</small></div></div>
+ <div class="tmgr-sec">TEAM DETAILS</div>
+ <div class="formgrid"><div class="field"><label>TEAM NAME</label><input id="mgName" value="${esc(t.name)}" maxlength="40"></div><div class="field"><label>CAPTAIN</label><input id="mgCaptain" value="${esc(t.captain)}" maxlength="50"></div><div class="field full"><label>TEAM LOGO (piliin para palitan)</label><input id="mgLogo" type="file" accept="image/*"></div></div>
+ <div class="formactions"><button class="btn small" type="button" onclick="mgSaveTeam()">Save team details</button></div>
+ <div class="tmgr-sec">PLAYERS (${t.players.length})</div>
+ ${rows||'<div class="empty">Wala pang player sa team na ito.</div>'}
+ <div class="tmgr-sec">+ MAGDAGDAG NG PLAYER</div>
+ <div class="tmgr-add"><input id="mgNewName" maxlength="40" placeholder="Player name / IGN"><select id="mgNewRole" aria-label="Role">${roleOpts('Flex')}</select><input id="mgNewPhoto" type="file" accept="image/*"><button class="btn small" type="button" onclick="mgAdd()">＋ Add player</button></div>
+ <p class="smalltext" style="margin-top:14px">Kusang nase-save sa admin ang bawat pagbabago. Pindutin ang <b>Publish</b> para makita ito ng viewers.</p>`;
+}
+async function mgSaveTeam(){
+ const t=mgrTeam();if(!t)return;
+ const name=$('mgName').value.trim(),captain=$('mgCaptain').value.trim();
+ if(!name||!captain){toast('Ilagay ang team name at captain.');return}
+ if(data.teams.some(x=>x.id!==t.id&&x.name.toLowerCase()===name.toLowerCase())){toast('May team na kapareho ang pangalan.');return}
+ try{
+  const f=$('mgLogo').files[0];if(f)t.logo=await readImage(f);
+  const old=t.name;t.name=name;t.captain=captain;
+  if(old!==name)teamRegCleanup(old);
+  persist();renderMgr();toast('Team details saved.');
+ }catch(err){console.error(err);toast('Hindi ma-process ang image. Subukan ang mas maliit na larawan.')}
+}
+function mgPlayer(i){
+ const t=mgrTeam();if(!t)return;const p=mgPlayerObj(t,i),name=$('mgPN'+i).value.trim();
+ if(!name){toast('Hindi puwedeng walang pangalan ang player.');renderMgr();return}
+ p.name=name;p.role=$('mgPR'+i).value;persist();renderMgr();toast('Player updated.');
+}
+async function mgPhoto(i,input){
+ const t=mgrTeam(),f=input.files&&input.files[0];if(!t||!f)return;
+ try{const p=mgPlayerObj(t,i);p.photo=await readImage(f);persist();renderMgr();toast('Profile picture updated.')}
+ catch(err){console.error(err);toast('Hindi ma-process ang image. Subukan ang mas maliit na larawan.')}
+}
+function mgDel(i){
+ const t=mgrTeam();if(!t)return;const n=playerName(t.players[i]);
+ if(!confirm('I-delete si '+n+' mula sa '+t.name+'?'))return;
+ t.players.splice(i,1);persist();renderMgr();toast('Player removed.');
+}
+async function mgAdd(){
+ const t=mgrTeam();if(!t)return;const name=$('mgNewName').value.trim();
+ if(!name){toast('Ilagay ang pangalan ng player.');return}
+ if(t.players.some(p=>playerName(p).toLowerCase()===name.toLowerCase())){toast('May player na kapareho ang pangalan sa team.');return}
+ try{const f=$('mgNewPhoto').files[0],photo=f?await readImage(f):'';
+  t.players.push({id:uid(),name,photo,role:$('mgNewRole').value});persist();renderMgr();toast('Player added.')}
+ catch(err){console.error(err);toast('Hindi ma-process ang image. Subukan ang mas maliit na larawan.')}
+}
+function teamCard(t){return `<article class="team team-group-card" style="${t.groupPhoto?`--team-group-bg:url(&quot;${t.groupPhoto}&quot;)`:''}"><div class="team-group-shade"></div><div class="team-group-content"><div class="logo">${t.logo?`<img src="${t.logo}">`:esc(t.name.slice(0,2).toUpperCase())}</div><div class="teaminfo"><strong>${esc(t.name)}</strong><small>Captain: ${esc(t.captain)} · ${t.players.length} players</small><div class="player-strip">${t.players.map(p=>`<span class="player-chip">${playerPhoto(p)?`<img src="${playerPhoto(p)}" alt="">`:`<span class="player-avatar">${esc(playerName(p).slice(0,1).toUpperCase())}</span>`}${esc(playerName(p))}</span>`).join('')}</div><span class="team-group-photo-tag">${t.groupPhoto?'TEAM GROUP PHOTO':'NO GROUP PHOTO'}</span></div><div class="teamtools"><button class="btn secondary small" onclick="editTeam('${t.id}')">Edit</button><button class="btn small" onclick="manageTeam('${t.id}')">Players</button><button class="btn danger small" onclick="deleteTeam('${t.id}')">×</button></div></div></article>`}
 function renderTeams(){$('teamList').innerHTML=data.teams.length?data.teams.map(teamCard).join():'<div class="empty" style="grid-column:1/-1">Wala pang registered teams. Gamitin ang form sa itaas para magdagdag.</div>';$('dashboardTeams').innerHTML=data.teams.length?data.teams.slice(0,5).map(t=>`<div class="team"><div class="logo">${t.logo?`<img src="${t.logo}">`:esc(t.name.slice(0,2).toUpperCase())}</div><div class="teaminfo"><strong>${esc(t.name)}</strong><small>Captain: ${esc(t.captain)} · ${t.players.length} players</small></div></div>`).join(''):'<div class="empty" style="grid-column:1/-1">No teams registered yet.</div>';$('teamCountPill').textContent=data.teams.length+' teams';renderGallery()}
 function renderGallery(){const root=$('teamGallery');if(!root)return;$('galleryTeamCount').textContent=data.teams.length+' teams';if(!data.teams.length){root.innerHTML='<div class="gallery-empty">Wala pang registered teams. Magdagdag muna sa Team Registration.</div>';return}root.innerHTML=data.teams.map((t,ti)=>`<article class="gallery-team"><div class="gallery-team-head"><div class="logo">${t.logo?`<img src="${t.logo}" alt="${esc(t.name)} logo">`:esc(t.name.slice(0,2).toUpperCase())}</div><div><div class="gallery-team-title">${esc(t.name)}</div><div class="gallery-team-sub">Captain: ${esc(t.captain)} · ${t.players.length} players</div></div></div><div class="large-roster">${t.players.map((p,pi)=>`<div class="large-player gallery-player-clickable" role="button" tabindex="0" aria-label="View ${esc(playerName(p))} player details" onclick="openPlayerGallery(${ti},${pi})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openPlayerGallery(${ti},${pi})}">${playerPhoto(p)?`<img class="large-player-photo" src="${playerPhoto(p)}" alt="${esc(playerName(p))}">`:`<div class="large-player-placeholder">${esc(playerName(p).slice(0,1).toUpperCase())}</div>`}<div class="large-player-info"><div class="large-player-name">${esc(playerName(p))}</div><span class="large-player-role">${esc(typeof p==='string'?'Role not set':(p.role||'Flex'))}</span><small class="gallery-view-hint">Click to enlarge ⤢</small></div></div>`).join('')}</div></article>`).join('')}
 function openPlayerGallery(teamIndex,playerIndex){const team=data.teams[teamIndex],player=team?.players?.[playerIndex];if(!team||!player)return;const photo=playerPhoto(player),name=playerName(player),role=typeof player==='string'?'Role not set':(player.role||'Flex');$('playerGalleryImage').src=photo||'';$('playerGalleryImage').classList.toggle('hidden',!photo);$('playerGalleryPlaceholder').classList.toggle('hidden',!!photo);$('playerGalleryPlaceholder').textContent=name.slice(0,1).toUpperCase()||'?';$('playerGalleryName').textContent=name||'Unnamed player';$('playerGalleryRole').textContent=role;$('playerGalleryTeam').textContent=team.name;$('playerGalleryCaptain').textContent='Captain: '+(team.captain||'Not set');$('playerGalleryModal').classList.remove('hidden');document.body.style.overflow='hidden'}
