@@ -208,6 +208,14 @@ select{width:100%;background:#0c1426;border:1px solid var(--line);border-radius:
 #intro button{position:absolute;z-index:4;background:rgba(0,0,0,.35);color:#ffe9a8;border:1px solid rgba(255,200,87,.45);border-radius:20px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;backdrop-filter:blur(6px);opacity:.85}
 #introSnd{left:14px;top:calc(12px + env(safe-area-inset-top))}
 
+/* MVP */
+.mvp-strip{display:flex;align-items:center;gap:10px;width:100%;margin-top:12px;padding:9px 12px;border-radius:12px;border:1px solid rgba(255,200,87,.45);background:linear-gradient(90deg,rgba(255,200,87,.16),rgba(76,201,255,.08));color:#fff;text-align:left;font-size:13px;cursor:pointer}
+.mvp-strip .st{font-size:18px}.mvp-strip b{color:var(--gold);letter-spacing:.5px}.mvp-strip .nm{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mvp-strip .go{color:var(--cyan);font-weight:800;font-size:12px;white-space:nowrap}
+.mvp-modal{position:fixed;inset:0;z-index:60;background:rgba(2,6,20,.88);display:grid;place-items:center;padding:16px;padding-top:calc(16px + env(safe-area-inset-top,0px));padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))}
+.mvp-box{width:min(520px,100%);max-height:100%;overflow:auto}.mvp-box canvas{display:block;width:100%;height:auto;aspect-ratio:1/1;border-radius:16px;border:1px solid #1d69b7;background:#061a47}
+.mvp-act{display:flex;gap:10px;margin-top:12px}.mvp-act button{flex:1;padding:12px;border-radius:12px;font-weight:800;border:1px solid var(--line);background:var(--p2);color:#fff}.mvp-act button.pri{background:var(--gold);color:#141a2a;border-color:var(--gold)}
+.mvp-av{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:50%;overflow:hidden;background:#10224f;border:1px solid var(--line);font-size:12px;font-weight:800;flex:none}.mvp-av img{width:100%;height:100%;object-fit:cover}
+.mvp-lb td .mvp-pl{display:flex;align-items:center;gap:9px;font-weight:700}.mvp-lb .ct{color:var(--gold);font-weight:900;text-align:center}
 </style></head><body>
 
 <div id="intro">
@@ -395,6 +403,7 @@ function resultCard(m){
    </div>
   </div>
   <div class="res-foot"><span>${esc(m.label||'MATCH')}</span><span>BEST OF ${Number(m.bestOf||3)}</span><span>📅 ${m.date?esc(fmtD(m.date)):'TBA'}</span></div>
+  ${window.mvpStrip?mvpStrip(m):''}
  </div>`;
 }
 
@@ -737,6 +746,100 @@ checkOff(true);
  evs.forEach(t=>addEventListener(t,unlock,true));
  document.addEventListener('visibilitychange',sync);
  setInterval(sync,1000);sync();
+})();
+</script>
+<script>
+/* ===== MVP CARD renderer (same code in index.html and viewer.html) ===== */
+window.rbMvpDraw=async function(cv,o){
+ const tok=cv._tok=(cv._tok||0)+1,W=1080,H=1080,x=cv.getContext('2d');
+ const C=rbMvpDraw._c||(rbMvpDraw._c=new Map());
+ const ld=s=>new Promise(r=>{if(!s)return r(null);if(C.has(s))return r(C.get(s));const i=new Image();i.onload=()=>{if(C.size>24)C.clear();C.set(s,i);r(i)};i.onerror=()=>r(null);i.src=s});
+ const [pp,hp,la,lb]=await Promise.all([ld(o.photo),ld(o.heroPhoto),ld(o.a&&o.a.logo),ld(o.b&&o.b.logo)]);
+ if(cv._tok!==tok)return;
+ cv.width=W;cv.height=H;
+ const F=(sz,w='900',it='italic')=>`${it} ${w} ${sz}px Inter,"Segoe UI",Arial,sans-serif`;
+ const rr=(X,Y,w,h,r)=>{x.beginPath();x.moveTo(X+r,Y);x.arcTo(X+w,Y,X+w,Y+h,r);x.arcTo(X+w,Y+h,X,Y+h,r);x.arcTo(X,Y+h,X,Y,r);x.arcTo(X,Y,X+w,Y,r);x.closePath()};
+ const cover=(c,img,X,Y,w,h,fy)=>{const k=Math.max(w/img.width,h/img.height),sw=w/k,sh=h/k;c.drawImage(img,(img.width-sw)/2,(img.height-sh)*fy,sw,sh,X,Y,w,h)};
+ const fit=(t,maxW,sz,w,it)=>{let s=sz;x.font=F(s,w,it);while(x.measureText(t).width>maxW&&s>14){s-=2;x.font=F(s,w,it)}};
+ const txt=(t,X,Y,al,col)=>{x.textAlign=al;x.fillStyle=col;x.fillText(t,X,Y)};
+ const up=s=>String(s||'').toUpperCase();
+ const n2=v=>String(Math.max(0,Math.floor(Number(v)||0))).padStart(2,'0');
+ /* background */
+ let g=x.createLinearGradient(0,0,W,H);g.addColorStop(0,'#061a47');g.addColorStop(.55,'#0b2f86');g.addColorStop(1,'#040b22');x.fillStyle=g;x.fillRect(0,0,W,H);
+ g=x.createRadialGradient(280,520,30,280,520,640);g.addColorStop(0,'rgba(70,150,255,.55)');g.addColorStop(1,'rgba(70,150,255,0)');x.fillStyle=g;x.fillRect(0,0,W,H);
+ x.save();x.globalAlpha=.07;x.fillStyle='#fff';for(let i=-2;i<9;i++){x.beginPath();x.moveTo(i*150,0);x.lineTo(i*150+60,0);x.lineTo(i*150-420,H);x.lineTo(i*150-480,H);x.closePath();x.fill()}x.restore();
+ /* player photo with soft right edge */
+ const oc=document.createElement('canvas');oc.width=660;oc.height=980;const ox=oc.getContext('2d');
+ cv._ph=null;if(pp){const z=Math.min(3,Math.max(1,Number(o.pz)||1)),k=Math.max(660/pp.width,980/pp.height)*z,iw=pp.width*k,ih=pp.height*k,bx=(660-iw)/2,by=(980-ih)*.12;let X0=bx+(Number(o.px)||0),Y0=by+(Number(o.py)||0);X0=Math.min(0,Math.max(660-iw,X0));Y0=Math.min(0,Math.max(980-ih,Y0));ox.drawImage(pp,X0,Y0,iw,ih);cv._ph={bx,by,minX:660-iw,minY:980-ih}}
+ else{ox.fillStyle='rgba(255,255,255,.08)';ox.font=F(520,'900','italic');ox.textAlign='center';ox.fillText((o.player||'?').charAt(0).toUpperCase(),330,700)}
+ ox.globalCompositeOperation='destination-in';g=ox.createLinearGradient(0,0,660,0);g.addColorStop(0,'#000');g.addColorStop(.6,'#000');g.addColorStop(1,'rgba(0,0,0,0)');ox.fillStyle=g;ox.fillRect(0,0,660,980);
+ g=ox.createLinearGradient(0,0,0,980);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(.15,'#000');g.addColorStop(1,'#000');ox.fillStyle=g;ox.fillRect(0,0,660,980);
+ x.drawImage(oc,0,100);
+ g=x.createLinearGradient(0,0,0,200);g.addColorStop(0,'rgba(4,11,34,.75)');g.addColorStop(1,'rgba(4,11,34,0)');x.fillStyle=g;x.fillRect(0,0,W,200);
+ g=x.createLinearGradient(0,H-260,0,H);g.addColorStop(0,'rgba(4,11,34,0)');g.addColorStop(1,'rgba(4,11,34,.92)');x.fillStyle=g;x.fillRect(0,H-260,W,260);
+ /* top: event + title */
+ x.textBaseline='alphabetic';
+ fit(up(o.event||'Rosabaya ML Tournament'),620,40,'900','normal');txt(up(o.event||'Rosabaya ML Tournament'),50,76,'left','#fff');
+ x.font=F(24,'700','normal');txt(('SEASON '+(o.season||'')).trim().toUpperCase(),50,114,'left','#8fb6ff');
+ x.font=F(122,'900','italic');g=x.createLinearGradient(0,150,0,270);g.addColorStop(0,'#fff6bf');g.addColorStop(1,'#ffb21c');
+ x.save();x.shadowColor='rgba(0,0,0,.55)';x.shadowBlur=18;x.shadowOffsetY=6;txt('MATCH MVP',W-46,262,'right',g);x.restore();
+ /* panel */
+ const X=440,Y=330,w=W-X-46,h=640;
+ rr(X,Y,w,h,18);x.fillStyle='rgba(4,14,46,.9)';x.fill();x.lineWidth=3;x.strokeStyle='#3f7dff';x.stroke();
+ x.save();rr(X,Y,w,h,18);x.clip();g=x.createLinearGradient(X,0,X+w,0);g.addColorStop(0,'#1c58e6');g.addColorStop(1,'#1238a8');x.fillStyle=g;x.fillRect(X,Y,w,78);x.restore();
+ const head='// '+up(o.team)+(o.team?'. ':'')+up(o.player);fit(head,w-48,38,'900','italic');txt(head,X+24,Y+53,'left','#fff');
+ /* hero picture */
+ const hx=X+24,hy=Y+104,hw=252,hh=300;
+ x.save();rr(hx,hy,hw,hh,12);x.clip();
+ if(hp)cover(x,hp,hx,hy,hw,hh,.2);else{g=x.createLinearGradient(hx,hy,hx+hw,hy+hh);g.addColorStop(0,'#16367e');g.addColorStop(1,'#0a1d4d');x.fillStyle=g;x.fillRect(hx,hy,hw,hh);x.font=F(150,'900','italic');txt((o.hero||'?').charAt(0).toUpperCase(),hx+hw/2,hy+hh/2+50,'center','rgba(255,255,255,.16)')}
+ x.restore();rr(hx,hy,hw,hh,12);x.lineWidth=3;x.strokeStyle='#7fb0ff';x.stroke();
+ /* K / D / A */
+ const cx=X+hw+24+24+4,cw=(X+w-24-cx)/3;
+ [['KILLS',o.k],['DEATHS',o.d],['ASSISTS',o.as]].forEach((c,i)=>{const mx=cx+cw*i+cw/2;x.font=F(17,'800','normal');txt(c[0],mx,hy+22,'center','#9fc2ff');x.font=F(54,'900','italic');txt(n2(c[1]),mx,hy+96,'center','#fff');if(i<2){x.font=F(40,'300','normal');txt('/',cx+cw*(i+1),hy+92,'center','#4f86e8')}});
+ x.fillStyle='#2b57b3';x.fillRect(cx,hy+124,cw*3,3);
+ x.font=F(17,'800','normal');txt('HERO',cx,hy+168,'left','#9fc2ff');
+ fit(up(o.hero)||'—',cw*3,44,'900','italic');txt(up(o.hero)||'—',cx,hy+216,'left','#ffd45e');
+ const d=Number(o.d)||0,kda=((Number(o.k)||0)+(Number(o.as)||0))/Math.max(1,d);
+ x.font=F(17,'800','normal');txt('KDA RATIO',cx,hy+266,'left','#9fc2ff');x.font=F(40,'900','italic');txt(kda.toFixed(2),cx+138,hy+268,'left','#fff');
+ /* series score */
+ const sy=Y+h-218,sh=194;
+ rr(X+24,sy,w-48,sh,14);x.fillStyle='rgba(10,36,100,.55)';x.fill();x.lineWidth=2;x.strokeStyle='#2c5bc0';x.stroke();
+ const tile=(img,nm,X0,Y0,s)=>{rr(X0,Y0,s,s,12);x.fillStyle='#fff';x.fill();x.save();rr(X0,Y0,s,s,12);x.clip();if(img){const k=Math.min((s-14)/img.width,(s-14)/img.height);x.drawImage(img,X0+(s-img.width*k)/2,Y0+(s-img.height*k)/2,img.width*k,img.height*k)}else{x.font=F(34,'900','italic');txt(up(nm).slice(0,2),X0+s/2,Y0+s/2+12,'center','#0b2a6f')}x.restore()};
+ const aw=o.winner==='a',bw=o.winner==='b';
+ const box=(v,win,X0,Y0)=>{rr(X0,Y0,104,104,12);x.fillStyle=win?'#27d3ff':'#e2334c';x.fill();x.font=F(76,'900','italic');txt(String(v===''||v==null?0:v),X0+52,Y0+80,'center',win?'#06223d':'#fff')};
+ const gw=(w-48),gx=X+24+(gw-(84+14+104+88+104+14+84))/2,by=sy+26;
+ tile(la,o.a&&o.a.name,gx,by+10,84);box(o.sa,aw,gx+84+14,by);
+ x.font=F(40,'900','italic');txt('VS',gx+84+14+104+44,by+68,'center','#fff');
+ box(o.sb,bw,gx+84+14+104+88,by);tile(lb,o.b&&o.b.name,gx+84+14+104+88+104+14,by+10,84);
+ const nmw=(84+14+104)-6;
+ fit(up(o.a&&o.a.name),nmw,26,'800','normal');txt(up(o.a&&o.a.name),gx+(84+14+104)/2,by+148,'center','#fff');
+ fit(up(o.b&&o.b.name),nmw,26,'800','normal');txt(up(o.b&&o.b.name),gx+84+14+104+88+(104+14+84)/2,by+148,'center','#fff');
+ /* footer */
+ x.font=F(24,'800','normal');txt(up(o.label||''),50,H-48,'left','#cfe0ff');
+ return true;
+};
+
+/* ===== MATCH MVP (viewer) ===== */
+(function(){
+ const ok=m=>!!(m&&m.mvp&&m.winner&&(m.mvp.teamId===m.a||m.mvp.teamId===m.b));
+ const plOf=m=>{const t=team(m.mvp.teamId);return t&&(t.players||[]).find(p=>p.name===m.mvp.player)};
+ window.mvpStrip=function(m){if(!ok(m))return'';const v=m.mvp;
+  return `<button type="button" class="mvp-strip" data-mvp="${esc(m.id)}"><span class="st">⭐</span><span class="nm"><b>MVP</b> · ${esc(v.player)}${v.hero?' · '+esc(v.hero):''} · ${Number(v.k)||0}/${Number(v.d)||0}/${Number(v.a)||0}</span><span class="go">View card ›</span></button>`};
+ function obj(m){const v=m.mvp,t=team(v.teamId),p=plOf(m),ta=team(m.a),tb=team(m.b);
+  return{event:D.eventName,season:D.season,label:m.label,a:{name:nm(m.a),logo:ta&&ta.logo||''},b:{name:nm(m.b),logo:tb&&tb.logo||''},sa:m.sa,sb:m.sb,winner:m.winner===m.a?'a':'b',team:t?t.name:'',player:v.player,photo:p&&p.photo||'',hero:v.hero||'',heroPhoto:v.heroPhoto||'',k:v.k,d:v.d,as:v.a,px:v.px,py:v.py,pz:v.pz}}
+ let box;
+ function modal(){if(box)return box;box=document.createElement('div');box.className='mvp-modal hidden';
+  box.innerHTML='<div class="mvp-box"><canvas id="mvpCv"></canvas><div class="mvp-act"><button type="button" class="pri" id="mvpDl">⬇ Save image</button><button type="button" id="mvpX">Close</button></div></div>';document.body.appendChild(box);
+  box.addEventListener('click',e=>{if(e.target===box||e.target.id==='mvpX')box.classList.add('hidden')});
+  box.querySelector('#mvpDl').onclick=()=>{const cv=box.querySelector('#mvpCv');cv.toBlob(b=>{const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=(box._n||'MVP')+'.png';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),2000)},'image/png')};
+  return box}
+ window.mvpOpen=function(id){const m=(D&&D.matches||[]).find(x=>x.id===id);if(!ok(m))return;const b=modal();b._n='MVP-'+String(m.mvp.player).replace(/[^\w-]+/g,'_');b.classList.remove('hidden');rbMvpDraw(b.querySelector('#mvpCv'),obj(m))};
+ document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-mvp]');if(b)mvpOpen(b.dataset.mvp)});
+ addEventListener('keydown',e=>{if(e.key==='Escape'&&box)box.classList.add('hidden')});
+ window.mvpBoard=function(){const map={};(D.matches||[]).filter(ok).forEach(m=>{const k=m.mvp.teamId+'|'+m.mvp.player;(map[k]=map[k]||{n:0,m}).n++});
+  const rows=Object.values(map).sort((a,b)=>b.n-a.n||a.m.mvp.player.localeCompare(b.m.mvp.player)).slice(0,10);if(!rows.length)return'';
+  return `<div class="sec-head" style="margin-top:22px"><b>MVP LEADERS</b><span>Pinakamaraming Match MVP</span></div><div class="card mvp-lb"><table><thead><tr><th>#</th><th>PLAYER</th><th>TEAM</th><th>MVP</th></tr></thead><tbody>${rows.map((r,i)=>{const p=plOf(r.m),t=team(r.m.mvp.teamId);return `<tr><td>${i+1}</td><td><span class="mvp-pl"><span class="mvp-av">${p&&p.photo?`<img src="${p.photo}" alt="">`:esc(String(r.m.mvp.player).slice(0,1).toUpperCase())}</span>${esc(r.m.mvp.player)}</span></td><td>${esc(t?t.name:'')}</td><td class="ct">${r.n}</td></tr>`}).join('')}</tbody></table></div>`};
+ if(typeof V==='object'&&V&&V.standings){const s0=V.standings;V.standings=function(){return s0.apply(V,arguments)+mvpBoard()}}
 })();
 </script>
 </body></html>

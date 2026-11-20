@@ -263,6 +263,12 @@ header{display:none!important}main.wrap{width:auto!important;max-width:none!impo
 .result-team-group-photo{max-width:205px;height:172px;object-position:center;border-radius:9px;border:2px solid rgba(255,255,255,.28)}
 @media(max-width:560px){.team-group-card{padding:10px}.team-group-content{gap:8px}.team-group-card .teamtools{width:100%;margin-left:0}.result-team-group-photo{height:132px}}
 \n</style>
+<style>
+.mvp-cv{display:block;width:100%;max-width:540px;height:auto;aspect-ratio:1/1;margin:8px auto 12px;border-radius:14px;border:1px solid #1d69b7;background:#061a47}
+.mvp-row{display:flex;align-items:center;gap:10px;justify-content:space-between;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#0c1426;margin-bottom:8px;flex-wrap:wrap}
+.mvp-row b{color:var(--gold)}
+.mvp-ctl{max-width:540px;margin:0 auto 12px}.mvp-ctl label{display:block;margin:8px 0 2px;font-size:12px}.mvp-ctl input[type=range]{width:100%;padding:0}.mvp-cv{touch-action:none;cursor:grab}
+</style>
 </head>
 <body>
 <div id="loginScreen" class="login">
@@ -286,6 +292,7 @@ header{display:none!important}main.wrap{width:auto!important;max-width:none!impo
     <button class="tab" data-tab="bracket" onclick="showTab('bracket')"><span>♜</span>Tournament Bracket</button>
     <button class="tab" data-tab="schedule" onclick="showTab('schedule')"><span>▦</span>Match Schedule</button>
     <button class="tab" data-tab="results" onclick="showTab('results')"><span>◉</span>Match Results</button>
+    <button class="tab" data-tab="mvp" onclick="showTab('mvp')"><span>⭐</span>Match MVP</button>
     <button class="tab" data-tab="standings" onclick="showTab('standings')"><span>🏅</span>Team Standing</button>
     <button class="tab" data-tab="certificates" onclick="showTab('certificates')"><span>📜</span>Certificates</button>
     <button class="tab" data-tab="settings" onclick="showTab('settings')"><span>⚙</span>Settings & Backup</button>
@@ -404,6 +411,26 @@ header{display:none!important}main.wrap{width:auto!important;max-width:none!impo
  <div class="hero"><div><div class="eyebrow">OFFICIAL MATCH RECORD</div><h1>Match results</h1><p>Enter the game score. Save the series score to advance winners in the Upper or Lower Bracket automatically.</p></div></div>
  <div class="card"><div class="row"><h2>Completed matches</h2><span class="pill" id="resultCount">0 results</span></div><div id="resultsArea"></div></div>
 </section>
+<section id="mvp" class="page hidden">
+ <div class="hero"><div><div class="eyebrow">MATCH AWARD</div><h1>Match MVP</h1><p>Pumili ng completed match, player, at i-type ang hero at KDA. Awtomatikong gagawa ng MVP card na lalabas sa Results ng viewer site pagkatapos mong mag-Publish.</p></div></div>
+ <div class="card"><div class="formgrid">
+  <div class="field full"><label>MATCH (completed lang)</label><select id="mvpMatch" onchange="mvpPickMatch()"></select></div>
+  <div class="field"><label>MVP PLAYER</label><select id="mvpPlayer" onchange="mvpResetPos()"></select><span class="smalltext">Awtomatikong gagamitin ang profile picture ng player.</span></div>
+  <div class="field"><label>HERO NAME</label><input id="mvpHero" maxlength="30" placeholder="e.g. Lunox" oninput="mvpDraw()"></div>
+  <div class="field"><label>KILLS</label><input id="mvpK" type="number" min="0" max="99" placeholder="0" oninput="mvpDraw()"></div>
+  <div class="field"><label>DEATHS</label><input id="mvpD" type="number" min="0" max="99" placeholder="0" oninput="mvpDraw()"></div>
+  <div class="field"><label>ASSISTS</label><input id="mvpA" type="number" min="0" max="99" placeholder="0" oninput="mvpDraw()"></div>
+  <div class="field"><label>HERO PICTURE (optional)</label><input id="mvpHeroPic" type="file" accept="image/*" onchange="mvpHeroPick(event)"><span class="smalltext" id="mvpHeroNote"></span></div>
+ </div><div class="formactions"><button class="btn" type="button" onclick="mvpSave()">★ Save MVP</button><button class="btn secondary" type="button" onclick="mvpDownload()">⬇ Download PNG</button><button class="btn danger" type="button" onclick="mvpRemove()">Remove MVP</button></div></div>
+ <div class="card"><h2>Card preview</h2><canvas id="mvpCanvas" class="mvp-cv"></canvas>
+ <div class="mvp-ctl"><div class="smalltext" style="margin-bottom:8px">📷 <b>Ilipat ang picture ng player:</b> i-drag mismo ang preview (mouse) o gamitin ang sliders. Pwede ring mag-zoom para makita ang mukha.</div>
+  <label>↔ Left / Right</label><input type="range" id="mvpSX" min="-300" max="300" step="1" value="0" oninput="mvpSlide()">
+  <label>↕ Up / Down</label><input type="range" id="mvpSY" min="-300" max="300" step="1" value="0" oninput="mvpSlide()">
+  <label>🔍 Zoom</label><input type="range" id="mvpSZ" min="1" max="3" step="0.05" value="1" oninput="mvpSlide()">
+  <div class="formactions" style="margin-top:10px"><button class="btn small secondary" type="button" onclick="mvpResetPos()">↺ Reset position</button><button class="btn small secondary" type="button" id="mvpDragBtn" onclick="mvpToggleDrag()">✋ Drag sa preview: ON</button></div></div><p class="smalltext" style="text-align:center">Pagkatapos mag-Save, pindutin ang <b>Publish</b> sa Viewer Site tab para lumabas ito sa viewer.</p></div>
+ <div class="card"><div class="row"><h2>Saved MVPs</h2><span class="pill" id="mvpCount">0</span></div><div id="mvpList"></div></div>
+</section>
+
 <section id="standings" class="page hidden">
  <div class="hero"><div><div class="eyebrow">TOURNAMENT RANKINGS</div><h1>Team Standing</h1><p>Live team rankings based on saved tournament match results.</p></div></div>
  <div class="card"><div class="arena-panel-head"><h2>🏅 OFFICIAL TEAM STANDINGS</h2><span class="muted" id="standingSummary">0 teams</span></div><div id="standingsArea"><div class="empty">Register teams and save match results to display standings.</div></div><p class="smalltext" style="margin-top:12px">Ranking: Points → Series wins → Game difference → Team name. A series win earns 3 points.</p></div>
@@ -484,7 +511,7 @@ function renderCertificate(){
  root.innerHTML=`<img class="certificate-logo" src="${CERT_LOGO_URI}" alt="Rosabaya"><div class="certificate-kicker">Rosabaya ML Tournament · Official Award</div><div class="certificate-title">CERTIFICATE</div><div class="certificate-award">OF ${awardText}</div><div class="certificate-copy">This certificate is proudly presented to</div><div class="certificate-recipient">${esc(team.name)}</div><div class="certificate-copy">In recognition of the team's outstanding performance and achievement as <b>${awardText}</b> in <b>${esc(event)}</b>. Your dedication, teamwork, and competitive spirit are hereby celebrated.</div><div class="certificate-copy" style="margin-top:18px">Awarded this ${esc(formatted)}.</div><div class="certificate-seal">OFFICIAL<br>AWARD</div><div class="certificate-footer"><div class="certificate-sign">${esc(sign)}<br><b>Authorized Signatory</b></div><div class="certificate-sign">Rosabaya ML Tournament<br><b>Organizing Committee</b></div></div>`;
 }
 function printCertificate(){if(!$('certificateTeam')?.value){alert('Pumili muna ng team.');return}renderCertificate();document.body.classList.add('print-certificate');window.print();setTimeout(()=>document.body.classList.remove('print-certificate'),700)}
-function showTab(id){document.querySelectorAll('.page').forEach(p=>p.classList.add('hidden'));$(id).classList.remove('hidden');document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===id));if(id==='bracket')renderBracket();if(id==='results')renderResults();if(id==='standings')renderStandings();if(id==='certificates')renderCertificates();if(id==='gallery')renderGallery();if(id==='schedule')renderSchedule();if(id==='dashboard')renderLiveMatch();window.scrollTo({top:0,behavior:'smooth'})}
+function showTab(id){document.querySelectorAll('.page').forEach(p=>p.classList.add('hidden'));$(id).classList.remove('hidden');document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===id));if(id==='bracket')renderBracket();if(id==='results')renderResults();if(id==='mvp')mvpRender();if(id==='standings')renderStandings();if(id==='certificates')renderCertificates();if(id==='gallery')renderGallery();if(id==='schedule')renderSchedule();if(id==='dashboard')renderLiveMatch();window.scrollTo({top:0,behavior:'smooth'})}
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function uid(){return 't'+Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
 function readImage(file){return new Promise((resolve,reject)=>{if(!file){resolve('');return}if(!file.type.startsWith('image/')){reject(Error('Please choose an image file'));return}const reader=new FileReader();reader.onload=()=>{const img=new Image();img.onload=()=>{const c=document.createElement('canvas'),scale=Math.min(1,360/Math.max(img.width,img.height));c.width=img.width*scale;c.height=img.height*scale;c.getContext('2d').drawImage(img,0,0,c.width,c.height);resolve(c.toDataURL('image/jpeg',.78))};img.onerror=reject;img.src=reader.result};reader.onerror=reject;reader.readAsDataURL(file)})}
@@ -984,7 +1011,7 @@ window.drawRegQR=function(){$('regUrl').textContent=url();$('regUrl2').textConte
  const small=src=>(!src||!String(src).startsWith('data:'))?Promise.resolve(src||''):new Promise(res=>{const i=new Image();i.onload=()=>{const k=Math.min(1,128/Math.max(i.width,i.height)),c=document.createElement('canvas');c.width=i.width*k;c.height=i.height*k;c.getContext('2d').drawImage(i,0,0,c.width,c.height);res(c.toDataURL('image/png'))};i.onerror=()=>res('');i.src=src});
  window.publishViewer=async function(){const b=$('pubBtn'),st=$('pubStatus');b.disabled=true;st.textContent='Nagpa-publish...';
   try{const teams=await Promise.all(data.teams.map(async t=>({id:t.id,name:t.name,captain:t.captain,logo:await small(t.logo),players:(t.players||[]).map(p=>typeof p==='string'?{name:p,photo:'',role:''}:{name:p.name,photo:p.photo||'',role:p.role||'Flex'})})));
-   const matches=allMatches().map(({m,label,section})=>({id:m.id,label,section,a:m.a,b:m.b,sa:m.sa,sb:m.sb,winner:m.winner,date:m.date,time:m.time,bestOf:m.bestOf}));
+   const matches=allMatches().map(({m,label,section})=>({id:m.id,label,section,a:m.a,b:m.b,sa:m.sa,sb:m.sb,winner:m.winner,date:m.date,time:m.time,bestOf:m.bestOf,mvp:(m.mvp&&m.winner&&(m.mvp.teamId===m.a||m.mvp.teamId===m.b))?m.mvp:undefined}));
    const body=JSON.stringify({p_pin:data.pin,p_data:{eventName:data.eventName,season:data.season,teams,matches}});
    const r=await fetch(RB.url+'/rest/v1/rpc/publish_data',{method:'POST',headers:{apikey:RB.key,Authorization:'Bearer '+RB.key,'Content-Type':'application/json'},body});
    if(!r.ok){const j=await r.json().catch(()=>({}));throw Error(j.message||r.status)}
@@ -1041,6 +1068,125 @@ window.drawRegQR=function(){$('regUrl').textContent=url();$('regUrl2').textConte
  };
  addEventListener('pagehide',()=>{if(room)setLive(false,'',true).catch(()=>{})});
 })();
+</script>
+<script>
+/* ===== MVP CARD renderer (same code in index.html and viewer.html) ===== */
+window.rbMvpDraw=async function(cv,o){
+ const tok=cv._tok=(cv._tok||0)+1,W=1080,H=1080,x=cv.getContext('2d');
+ const C=rbMvpDraw._c||(rbMvpDraw._c=new Map());
+ const ld=s=>new Promise(r=>{if(!s)return r(null);if(C.has(s))return r(C.get(s));const i=new Image();i.onload=()=>{if(C.size>24)C.clear();C.set(s,i);r(i)};i.onerror=()=>r(null);i.src=s});
+ const [pp,hp,la,lb]=await Promise.all([ld(o.photo),ld(o.heroPhoto),ld(o.a&&o.a.logo),ld(o.b&&o.b.logo)]);
+ if(cv._tok!==tok)return;
+ cv.width=W;cv.height=H;
+ const F=(sz,w='900',it='italic')=>`${it} ${w} ${sz}px Inter,"Segoe UI",Arial,sans-serif`;
+ const rr=(X,Y,w,h,r)=>{x.beginPath();x.moveTo(X+r,Y);x.arcTo(X+w,Y,X+w,Y+h,r);x.arcTo(X+w,Y+h,X,Y+h,r);x.arcTo(X,Y+h,X,Y,r);x.arcTo(X,Y,X+w,Y,r);x.closePath()};
+ const cover=(c,img,X,Y,w,h,fy)=>{const k=Math.max(w/img.width,h/img.height),sw=w/k,sh=h/k;c.drawImage(img,(img.width-sw)/2,(img.height-sh)*fy,sw,sh,X,Y,w,h)};
+ const fit=(t,maxW,sz,w,it)=>{let s=sz;x.font=F(s,w,it);while(x.measureText(t).width>maxW&&s>14){s-=2;x.font=F(s,w,it)}};
+ const txt=(t,X,Y,al,col)=>{x.textAlign=al;x.fillStyle=col;x.fillText(t,X,Y)};
+ const up=s=>String(s||'').toUpperCase();
+ const n2=v=>String(Math.max(0,Math.floor(Number(v)||0))).padStart(2,'0');
+ /* background */
+ let g=x.createLinearGradient(0,0,W,H);g.addColorStop(0,'#061a47');g.addColorStop(.55,'#0b2f86');g.addColorStop(1,'#040b22');x.fillStyle=g;x.fillRect(0,0,W,H);
+ g=x.createRadialGradient(280,520,30,280,520,640);g.addColorStop(0,'rgba(70,150,255,.55)');g.addColorStop(1,'rgba(70,150,255,0)');x.fillStyle=g;x.fillRect(0,0,W,H);
+ x.save();x.globalAlpha=.07;x.fillStyle='#fff';for(let i=-2;i<9;i++){x.beginPath();x.moveTo(i*150,0);x.lineTo(i*150+60,0);x.lineTo(i*150-420,H);x.lineTo(i*150-480,H);x.closePath();x.fill()}x.restore();
+ /* player photo with soft right edge */
+ const oc=document.createElement('canvas');oc.width=660;oc.height=980;const ox=oc.getContext('2d');
+ cv._ph=null;if(pp){const z=Math.min(3,Math.max(1,Number(o.pz)||1)),k=Math.max(660/pp.width,980/pp.height)*z,iw=pp.width*k,ih=pp.height*k,bx=(660-iw)/2,by=(980-ih)*.12;let X0=bx+(Number(o.px)||0),Y0=by+(Number(o.py)||0);X0=Math.min(0,Math.max(660-iw,X0));Y0=Math.min(0,Math.max(980-ih,Y0));ox.drawImage(pp,X0,Y0,iw,ih);cv._ph={bx,by,minX:660-iw,minY:980-ih}}
+ else{ox.fillStyle='rgba(255,255,255,.08)';ox.font=F(520,'900','italic');ox.textAlign='center';ox.fillText((o.player||'?').charAt(0).toUpperCase(),330,700)}
+ ox.globalCompositeOperation='destination-in';g=ox.createLinearGradient(0,0,660,0);g.addColorStop(0,'#000');g.addColorStop(.6,'#000');g.addColorStop(1,'rgba(0,0,0,0)');ox.fillStyle=g;ox.fillRect(0,0,660,980);
+ g=ox.createLinearGradient(0,0,0,980);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(.15,'#000');g.addColorStop(1,'#000');ox.fillStyle=g;ox.fillRect(0,0,660,980);
+ x.drawImage(oc,0,100);
+ g=x.createLinearGradient(0,0,0,200);g.addColorStop(0,'rgba(4,11,34,.75)');g.addColorStop(1,'rgba(4,11,34,0)');x.fillStyle=g;x.fillRect(0,0,W,200);
+ g=x.createLinearGradient(0,H-260,0,H);g.addColorStop(0,'rgba(4,11,34,0)');g.addColorStop(1,'rgba(4,11,34,.92)');x.fillStyle=g;x.fillRect(0,H-260,W,260);
+ /* top: event + title */
+ x.textBaseline='alphabetic';
+ fit(up(o.event||'Rosabaya ML Tournament'),620,40,'900','normal');txt(up(o.event||'Rosabaya ML Tournament'),50,76,'left','#fff');
+ x.font=F(24,'700','normal');txt(('SEASON '+(o.season||'')).trim().toUpperCase(),50,114,'left','#8fb6ff');
+ x.font=F(122,'900','italic');g=x.createLinearGradient(0,150,0,270);g.addColorStop(0,'#fff6bf');g.addColorStop(1,'#ffb21c');
+ x.save();x.shadowColor='rgba(0,0,0,.55)';x.shadowBlur=18;x.shadowOffsetY=6;txt('MATCH MVP',W-46,262,'right',g);x.restore();
+ /* panel */
+ const X=440,Y=330,w=W-X-46,h=640;
+ rr(X,Y,w,h,18);x.fillStyle='rgba(4,14,46,.9)';x.fill();x.lineWidth=3;x.strokeStyle='#3f7dff';x.stroke();
+ x.save();rr(X,Y,w,h,18);x.clip();g=x.createLinearGradient(X,0,X+w,0);g.addColorStop(0,'#1c58e6');g.addColorStop(1,'#1238a8');x.fillStyle=g;x.fillRect(X,Y,w,78);x.restore();
+ const head='// '+up(o.team)+(o.team?'. ':'')+up(o.player);fit(head,w-48,38,'900','italic');txt(head,X+24,Y+53,'left','#fff');
+ /* hero picture */
+ const hx=X+24,hy=Y+104,hw=252,hh=300;
+ x.save();rr(hx,hy,hw,hh,12);x.clip();
+ if(hp)cover(x,hp,hx,hy,hw,hh,.2);else{g=x.createLinearGradient(hx,hy,hx+hw,hy+hh);g.addColorStop(0,'#16367e');g.addColorStop(1,'#0a1d4d');x.fillStyle=g;x.fillRect(hx,hy,hw,hh);x.font=F(150,'900','italic');txt((o.hero||'?').charAt(0).toUpperCase(),hx+hw/2,hy+hh/2+50,'center','rgba(255,255,255,.16)')}
+ x.restore();rr(hx,hy,hw,hh,12);x.lineWidth=3;x.strokeStyle='#7fb0ff';x.stroke();
+ /* K / D / A */
+ const cx=X+hw+24+24+4,cw=(X+w-24-cx)/3;
+ [['KILLS',o.k],['DEATHS',o.d],['ASSISTS',o.as]].forEach((c,i)=>{const mx=cx+cw*i+cw/2;x.font=F(17,'800','normal');txt(c[0],mx,hy+22,'center','#9fc2ff');x.font=F(54,'900','italic');txt(n2(c[1]),mx,hy+96,'center','#fff');if(i<2){x.font=F(40,'300','normal');txt('/',cx+cw*(i+1),hy+92,'center','#4f86e8')}});
+ x.fillStyle='#2b57b3';x.fillRect(cx,hy+124,cw*3,3);
+ x.font=F(17,'800','normal');txt('HERO',cx,hy+168,'left','#9fc2ff');
+ fit(up(o.hero)||'—',cw*3,44,'900','italic');txt(up(o.hero)||'—',cx,hy+216,'left','#ffd45e');
+ const d=Number(o.d)||0,kda=((Number(o.k)||0)+(Number(o.as)||0))/Math.max(1,d);
+ x.font=F(17,'800','normal');txt('KDA RATIO',cx,hy+266,'left','#9fc2ff');x.font=F(40,'900','italic');txt(kda.toFixed(2),cx+138,hy+268,'left','#fff');
+ /* series score */
+ const sy=Y+h-218,sh=194;
+ rr(X+24,sy,w-48,sh,14);x.fillStyle='rgba(10,36,100,.55)';x.fill();x.lineWidth=2;x.strokeStyle='#2c5bc0';x.stroke();
+ const tile=(img,nm,X0,Y0,s)=>{rr(X0,Y0,s,s,12);x.fillStyle='#fff';x.fill();x.save();rr(X0,Y0,s,s,12);x.clip();if(img){const k=Math.min((s-14)/img.width,(s-14)/img.height);x.drawImage(img,X0+(s-img.width*k)/2,Y0+(s-img.height*k)/2,img.width*k,img.height*k)}else{x.font=F(34,'900','italic');txt(up(nm).slice(0,2),X0+s/2,Y0+s/2+12,'center','#0b2a6f')}x.restore()};
+ const aw=o.winner==='a',bw=o.winner==='b';
+ const box=(v,win,X0,Y0)=>{rr(X0,Y0,104,104,12);x.fillStyle=win?'#27d3ff':'#e2334c';x.fill();x.font=F(76,'900','italic');txt(String(v===''||v==null?0:v),X0+52,Y0+80,'center',win?'#06223d':'#fff')};
+ const gw=(w-48),gx=X+24+(gw-(84+14+104+88+104+14+84))/2,by=sy+26;
+ tile(la,o.a&&o.a.name,gx,by+10,84);box(o.sa,aw,gx+84+14,by);
+ x.font=F(40,'900','italic');txt('VS',gx+84+14+104+44,by+68,'center','#fff');
+ box(o.sb,bw,gx+84+14+104+88,by);tile(lb,o.b&&o.b.name,gx+84+14+104+88+104+14,by+10,84);
+ const nmw=(84+14+104)-6;
+ fit(up(o.a&&o.a.name),nmw,26,'800','normal');txt(up(o.a&&o.a.name),gx+(84+14+104)/2,by+148,'center','#fff');
+ fit(up(o.b&&o.b.name),nmw,26,'800','normal');txt(up(o.b&&o.b.name),gx+84+14+104+88+(104+14+84)/2,by+148,'center','#fff');
+ /* footer */
+ x.font=F(24,'800','normal');txt(up(o.label||''),50,H-48,'left','#cfe0ff');
+ return true;
+};
+
+/* ===== MATCH MVP (admin) ===== */
+let mvpHeroImg='',mvpP={x:0,y:0,z:1},mvpDragOn=true;
+const mvpRows=()=>allMatches().filter(x=>x.m.a&&x.m.b&&x.m.winner);
+function mvpFind(){const id=$('mvpMatch').value;return mvpRows().find(x=>x.m.id===id)||null}
+function mvpRender(){
+ const sel=$('mvpMatch'),cur=sel.value,rows=mvpRows();
+ sel.innerHTML=rows.length?'<option value="">— Pumili ng match —</option>'+rows.map(x=>`<option value="${esc(x.m.id)}">${esc(x.label)} · ${esc(getTeam(x.m.a)?.name||'TBD')} ${esc(x.m.sa)}–${esc(x.m.sb)} ${esc(getTeam(x.m.b)?.name||'TBD')}${x.m.mvp?'  ⭐':''}</option>`).join(''):'<option value="">Wala pang completed matches</option>';
+ if(rows.some(x=>x.m.id===cur))sel.value=cur;
+ mvpPickMatch();
+ const saved=rows.filter(x=>x.m.mvp);$('mvpCount').textContent=saved.length+' saved';
+ $('mvpList').innerHTML=saved.length?saved.map(x=>{const t=getTeam(x.m.mvp.teamId);return `<div class="mvp-row"><div><b>${esc(x.m.mvp.player)}</b> · ${esc(x.m.mvp.hero||'—')} · ${x.m.mvp.k}/${x.m.mvp.d}/${x.m.mvp.a}<br><span class="smalltext">${esc(t?.name||'')} · ${esc(x.label)}</span></div><button class="btn small secondary" type="button" onclick="mvpEdit('${esc(x.m.id)}')">Edit</button></div>`}).join(''):'<div class="empty">Wala pang naka-save na MVP.</div>'}
+function mvpEdit(id){$('mvpMatch').value=id;mvpPickMatch();scrollTo({top:0,behavior:'smooth'})}
+function mvpPickMatch(){
+ const x=mvpFind(),ps=$('mvpPlayer');mvpHeroImg='';$('mvpHeroPic').value='';
+ if(!x){ps.innerHTML='<option value="">Pumili muna ng match</option>';['mvpHero','mvpK','mvpD','mvpA'].forEach(i=>$(i).value='');$('mvpHeroNote').textContent='';mvpDraw();return}
+ const m=x.m,opt=side=>{const t=getTeam(m[side]);return t?`<optgroup label="${esc(t.name)}">`+(t.players||[]).map((p,i)=>`<option value="${side}:${i}">${esc(playerName(p))}</option>`).join('')+'</optgroup>':''};
+ ps.innerHTML='<option value="">— Pumili ng player —</option>'+opt('a')+opt('b');
+ const v=m.mvp;mvpP={x:v?(Number(v.px)||0):0,y:v?(Number(v.py)||0):0,z:v?(Number(v.pz)||1):1};
+ if(v){const side=v.teamId===m.a?'a':'b',t=getTeam(m[side]),i=t?(t.players||[]).findIndex(p=>playerName(p)===v.player):-1;if(i>=0)ps.value=side+':'+i;
+  $('mvpHero').value=v.hero||'';$('mvpK').value=v.k;$('mvpD').value=v.d;$('mvpA').value=v.a;mvpHeroImg=v.heroPhoto||'';$('mvpHeroNote').textContent=mvpHeroImg?'May naka-save na hero picture.':''}
+ else{['mvpHero','mvpK','mvpD','mvpA'].forEach(i=>$(i).value='');$('mvpHeroNote').textContent=''}
+ mvpDraw()}
+function mvpHeroPick(e){const f=e.target.files[0];if(!f)return;if(!f.type.startsWith('image/')){toast('Image file lang po.');return}
+ const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{const k=Math.min(1,560/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=im.width*k;c.height=im.height*k;c.getContext('2d').drawImage(im,0,0,c.width,c.height);mvpHeroImg=c.toDataURL('image/jpeg',.86);$('mvpHeroNote').textContent='Hero picture handa na.';mvpDraw()};im.src=r.result};r.readAsDataURL(f)}
+function mvpObj(){
+ const x=mvpFind();if(!x)return null;const m=x.m,ta=getTeam(m.a),tb=getTeam(m.b),pv=$('mvpPlayer').value;let team=null,p=null;
+ if(pv){const [s,i]=pv.split(':');team=getTeam(m[s]);p=team&&(team.players||[])[+i]}
+ return{x,team,p,o:{event:data.eventName,season:data.season,label:x.label,a:{name:ta?.name||'TBD',logo:ta?.logo||''},b:{name:tb?.name||'TBD',logo:tb?.logo||''},sa:m.sa,sb:m.sb,winner:m.winner===m.a?'a':'b',
+  team:team?team.name:'',player:p?playerName(p):'',photo:p?playerPhoto(p):'',hero:$('mvpHero').value.trim(),heroPhoto:mvpHeroImg,k:$('mvpK').value,d:$('mvpD').value,as:$('mvpA').value,px:mvpP.x,py:mvpP.y,pz:mvpP.z}}}
+function mvpDraw(){const cv=$('mvpCanvas'),r=mvpObj();if(!r){const x=cv.getContext('2d');cv.width=1080;cv.height=1080;x.fillStyle='#061a47';x.fillRect(0,0,1080,1080);x.fillStyle='#8fb6ff';x.font='700 44px Arial';x.textAlign='center';x.fillText('Pumili ng match para makita ang card',540,545);return}return rbMvpDraw(cv,r.o).then(ok=>{const h=cv._ph;if(!ok)return ok;const sx=$('mvpSX'),sy=$('mvpSY'),sz=$('mvpSZ');if(h){sx.disabled=sy.disabled=false;sx.min=Math.floor(h.minX-h.bx);sx.max=Math.ceil(-h.bx);sy.min=Math.floor(h.minY-h.by);sy.max=Math.ceil(-h.by);mvpP.x=Math.min(+sx.max,Math.max(+sx.min,mvpP.x));mvpP.y=Math.min(+sy.max,Math.max(+sy.min,mvpP.y))}else{sx.disabled=sy.disabled=true}sx.value=mvpP.x;sy.value=mvpP.y;sz.value=mvpP.z;return ok})}
+function mvpSlide(){mvpP={x:+$('mvpSX').value,y:+$('mvpSY').value,z:+$('mvpSZ').value};mvpDraw()}
+function mvpResetPos(){mvpP={x:0,y:0,z:1};mvpDraw()}
+function mvpToggleDrag(){mvpDragOn=!mvpDragOn;mvpDragUi()}
+function mvpDragUi(){const cv=$('mvpCanvas');cv.style.touchAction=mvpDragOn?'none':'auto';cv.style.cursor=mvpDragOn?'grab':'default';$('mvpDragBtn').textContent='✋ Drag sa preview: '+(mvpDragOn?'ON':'OFF')}
+(function(){const cv=$('mvpCanvas');let d=null;mvpDragOn=matchMedia('(pointer:fine)').matches;mvpDragUi();
+ cv.addEventListener('pointerdown',e=>{if(!mvpDragOn||!cv._ph)return;d={x:e.clientX,y:e.clientY,px:mvpP.x,py:mvpP.y};try{cv.setPointerCapture(e.pointerId)}catch(_){}cv.style.cursor='grabbing'});
+ cv.addEventListener('pointermove',e=>{if(!d||!cv._ph)return;const f=1080/cv.getBoundingClientRect().width,h=cv._ph;mvpP.x=Math.min(-h.bx,Math.max(h.minX-h.bx,d.px+(e.clientX-d.x)*f));mvpP.y=Math.min(-h.by,Math.max(h.minY-h.by,d.py+(e.clientY-d.y)*f));mvpDraw()});
+ ['pointerup','pointercancel'].forEach(t=>cv.addEventListener(t,()=>{d=null;cv.style.cursor=mvpDragOn?'grab':'default'}));
+})();
+function mvpSave(){
+ const r=mvpObj();if(!r){toast('Pumili muna ng match.');return}if(!r.p){toast('Pumili muna ng MVP player.');return}
+ const n=id=>Math.max(0,Math.floor(Number($(id).value)||0));
+ r.x.m.mvp={teamId:r.team.id,player:playerName(r.p),hero:$('mvpHero').value.trim(),k:n('mvpK'),d:n('mvpD'),a:n('mvpA'),heroPhoto:mvpHeroImg,px:Math.round(mvpP.x),py:Math.round(mvpP.y),pz:Math.round(mvpP.z*100)/100};
+ persist();toast('MVP saved. Pindutin ang Publish para lumabas sa viewer.');mvpRender()}
+function mvpRemove(){const x=mvpFind();if(!x||!x.m.mvp){toast('Walang MVP na buburahin.');return}if(!confirm('Burahin ang MVP ng match na ito?'))return;delete x.m.mvp;persist();toast('MVP removed.');mvpRender()}
+async function mvpDownload(){const r=mvpObj();if(!r||!r.p){toast('Pumili muna ng match at player.');return}const cv=$('mvpCanvas');await rbMvpDraw(cv,r.o);
+ cv.toBlob(b=>{const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='MVP-'+(r.o.player||'player').replace(/[^\w-]+/g,'_')+'.png';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),2000)},'image/png')}
 </script>
 </body>
 </html>
