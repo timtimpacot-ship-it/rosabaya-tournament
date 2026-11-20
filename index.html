@@ -461,6 +461,7 @@ header{display:none!important}main.wrap{width:auto!important;max-width:none!impo
  <div class="card"><h2>Event details</h2><div class="formgrid"><div class="field"><label>TOURNAMENT NAME</label><input id="eventName" placeholder="Rosabaya ML Tournament"></div><div class="field"><label>SEASON / YEAR</label><input id="eventSeason" placeholder="2026"></div></div><div class="formactions"><button class="btn" onclick="saveSettings()">Save event details</button></div></div>
  <div class="card"><h2>Change admin PIN</h2><div class="formgrid"><div class="field"><label>CURRENT PIN</label><input id="oldPin" type="password"></div><div class="field"><label>NEW PIN (4–12 digits)</label><input id="newPin" type="password" inputmode="numeric" minlength="4" maxlength="12"></div></div><div class="formactions"><button class="btn" onclick="changePin()">Update PIN</button></div></div>
  <div class="card"><h2>Backup & restore</h2><p class="muted">I-download ang JSON backup para hindi mawala ang records kapag nag-clear ng browser data. Maaari ring i-restore ang dating backup.</p><div class="actions"><button class="btn" onclick="exportData()">Download backup</button><label class="btn secondary" style="cursor:pointer">Restore backup<input type="file" accept="application/json,.json" style="display:none" onchange="importData(event)"></label></div></div>
+ <div class="card"><h2>☁ Cloud database (Supabase)</h2><p class="muted">I-save ang lahat ng tournament data sa database para nandoon pa rin ito kahit ibang PC o browser ang gamitin. Hindi mo na kailangan ng download/restore backup.</p><div class="actions"><button class="btn" onclick="cloudSaveNow()">Save to cloud</button><button class="btn secondary" onclick="cloudLoadNow()">Load from cloud</button></div><label style="display:flex;gap:8px;align-items:center;margin-top:14px;cursor:pointer"><input type="checkbox" id="cloudAuto" onchange="cloudAutoToggle(this.checked)" style="width:auto"> Auto-save sa cloud tuwing may pagbabago</label><p id="cloudStatus" class="muted" style="margin-top:8px"></p></div>
  <div class="card"><h2 style="color:var(--red)">Danger zone</h2><p class="muted">Burahin ang lahat ng teams, bracket at match results sa browser na ito.</p><button class="btn danger" onclick="resetAll()">Reset all tournament data</button></div>
  <div class="notice">Important: This first version saves data only in this browser/device using local storage. It is not yet a hosted multi-user database. Do not use a shared/public computer for sensitive data.</div>
 </section>
@@ -1187,6 +1188,70 @@ function mvpSave(){
 function mvpRemove(){const x=mvpFind();if(!x||!x.m.mvp){toast('Walang MVP na buburahin.');return}if(!confirm('Burahin ang MVP ng match na ito?'))return;delete x.m.mvp;persist();toast('MVP removed.');mvpRender()}
 async function mvpDownload(){const r=mvpObj();if(!r||!r.p){toast('Pumili muna ng match at player.');return}const cv=$('mvpCanvas');await rbMvpDraw(cv,r.o);
  cv.toBlob(b=>{const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='MVP-'+(r.o.player||'player').replace(/[^\w-]+/g,'_')+'.png';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),2000)},'image/png')}
+</script>
+<script>
+(function(){
+ const TK='rosabaya_cloud_at',AK='rosabaya_cloud_auto';
+ const call=(fn,body)=>fetch(RB.url+'/rest/v1/rpc/'+fn,{method:'POST',headers:{apikey:RB.key,Authorization:'Bearer '+RB.key,'Content-Type':'application/json'},body:JSON.stringify(body)}).then(async r=>{const j=await r.json().catch(()=>null);if(!r.ok)throw Error((j&&(j.message||j.hint))||('error '+r.status));return j});
+ const lsGet=k=>{try{return localStorage.getItem(k)||''}catch(_){return ''}};
+ const lsSet=(k,v)=>{try{localStorage.setItem(k,v)}catch(_){}};
+ const say=t=>{const e=document.getElementById('cloudStatus');if(e)e.textContent=t};
+ const when=s=>s?new Date(s).toLocaleString('en-PH'):'';
+ const auto=()=>lsGet(AK)!=='0';
+ let pinOverride=null,busy=false,warned=false,tm=null;
+ async function withPin(fn,mk){
+  try{return await call(fn,mk(pinOverride||data.pin))}
+  catch(e){
+   if(e.message==='CLOUD_NEWER'||e instanceof TypeError)throw e;
+   const p=prompt('Hindi tinanggap ng cloud ang PIN ('+e.message+'). I-type ang admin PIN para sa cloud:');
+   if(!p)throw e;
+   const r=await call(fn,mk(p));pinOverride=p;return r}}
+ async function cloudSave(manual){
+  if(busy)return;busy=true;
+  try{
+   if(manual&&!data.teams.length&&!confirm('Walang teams sa PC na ito. I-save pa rin sa cloud? (Mapapalitan ang laman ng cloud.)'))return;
+   const mb=(JSON.stringify(data).length/1048576).toFixed(1);
+   let force=false;
+   for(;;){
+    try{
+     const ts=await withPin('save_admin_state',p=>({p_pin:p,p_data:data,p_expected:lsGet(TK)||null,p_force:force}));
+     lsSet(TK,ts);warned=false;say('Na-save sa cloud: '+when(ts)+' ('+mb+' MB)');if(manual)toast('Na-save sa cloud.');break}
+    catch(e){
+     if(e.message!=='CLOUD_NEWER')throw e;
+     if(manual&&confirm('May mas bagong data sa cloud galing sa ibang PC. Kapag itinuloy, mapapalitan ito ng data ng PC na ito. Ituloy?')){force=true;continue}
+     say('Hindi na-save: may mas bagong data sa cloud. Pindutin ang "Load from cloud".');
+     if(!warned){warned=true;toast('May mas bagong data sa cloud. Tingnan ang Settings & Backup.')}
+     break}}
+  }catch(e){say('Hindi na-save sa cloud: '+e.message+'. I-check kung na-run ang SQL at may internet.')}
+  finally{busy=false}}
+ async function cloudLoad(skipConfirm){
+  try{
+   const rows=await withPin('load_admin_state',p=>({p_pin:p}));
+   const row=rows&&rows[0];
+   if(!row||!row.data){say('Wala pang naka-save na data sa cloud.');toast('Wala pang data sa cloud.');return}
+   if(!skipConfirm&&!confirm('I-load ang data mula sa cloud ('+when(row.updated_at)+')? Mapapalitan ang data sa PC na ito.'))return;
+   try{localStorage.setItem(KEY,JSON.stringify(row.data))}catch(_){alert('Hindi kasya ang data sa browser storage ng PC na ito (masyadong malaki ang photos).');return}
+   lsSet(TK,row.updated_at);location.reload()
+  }catch(e){say('Hindi na-load: '+e.message)}}
+ const sched=()=>{clearTimeout(tm);tm=setTimeout(()=>{if(data.teams.length)cloudSave(false)},4000)};
+ async function check(){
+  try{
+   const ct=await withPin('admin_state_time',p=>({p_pin:p}));
+   const at=lsGet(TK);
+   if(!ct){say('Wala pang data sa cloud. Pindutin ang "Save to cloud".');return}
+   if(!at||new Date(ct)>new Date(at)){
+    if(confirm('May data sa cloud ('+when(ct)+') na mas bago kaysa sa PC na ito. I-load ngayon?'))cloudLoad(true);
+    else say('May mas bagong data sa cloud ('+when(ct)+'). Hindi pa naka-load sa PC na ito.')}
+   else say('Naka-sync sa cloud: '+when(at))
+  }catch(e){say('Hindi maka-connect sa cloud: '+e.message)}}
+ const _p=persist;persist=function(){const r=_p.apply(this,arguments);if(auto())sched();return r};
+ const _l=login;login=function(){const r=_l.apply(this,arguments);if(sessionStorage.getItem('rosabayaAdmin')==='yes')setTimeout(check,400);return r};
+ window.cloudSaveNow=()=>cloudSave(true);
+ window.cloudLoadNow=()=>cloudLoad(false);
+ window.cloudAutoToggle=v=>{lsSet(AK,v?'1':'0');if(v)sched()};
+ const cb=document.getElementById('cloudAuto');if(cb)cb.checked=auto();
+ if(sessionStorage.getItem('rosabayaAdmin')==='yes')setTimeout(check,800);
+})();
 </script>
 </body>
 </html>
