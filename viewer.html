@@ -207,6 +207,7 @@ select{width:100%;background:#0c1426;border:1px solid var(--line);border-radius:
 #introLogoWrap.show #introLogo{transform:scale(1)}
 #intro button{position:absolute;z-index:4;background:rgba(0,0,0,.35);color:#ffe9a8;border:1px solid rgba(255,200,87,.45);border-radius:20px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;backdrop-filter:blur(6px);opacity:.85}
 #introSnd{left:14px;top:calc(12px + env(safe-area-inset-top))}
+
 </style></head><body>
 
 <div id="intro">
@@ -249,6 +250,7 @@ select{width:100%;background:#0c1426;border:1px solid var(--line);border-radius:
  <main id="view"></main>
  <div class="tag"><span></span><i>BIGGER DREAMS<br>STRONGER TOGETHER</i><span></span></div>
 </div>
+<audio id="bgm" src="Rosabaya_Dominance.mp3" loop preload="none"></audio>
 <div id="offAlert" class="modal hidden"><div class="offbox"><div style="font-size:44px">📡</div><h3>Walang internet connection</h3><p class="muted">Offline ka ngayon. Kailangan ng internet para mag-login at makita ang schedule, standings at results. I-connect muna ang data o Wi-Fi mo, tapos subukan ulit.</p><button class="btn" id="offOk">OK</button></div></div>
 <div id="tmModal" class="modal hidden"><div class="tm-sheet" id="tmSheet"></div></div>
 <div id="modal" class="modal hidden"></div>
@@ -716,4 +718,25 @@ checkOff(true);
 /* QR deep links: viewer.html#register (player) and viewer.html#team (team) */
 {const H=location.hash;if(H==='#register'||H==='#team'){regMode=H==='#team'?'team':'player';
  if(sess){userPicked=true;tab='register';render()}else $('goReg').onclick()}}
-</script></body></html>
+</script><script>
+/* BGM: "Rosabaya Dominance" is always on by default (login screen + dashboard).
+   - starts after the intro; if the browser blocks autoplay, starts on the first tap/click/key
+   - pauses while the Live stream is on (so it never fights the stream audio) and when the tab is hidden */
+(function(){
+ const a=document.getElementById('bgm');if(!a)return;
+ a.volume=.4;
+ const introOn=()=>!!document.getElementById('intro');
+ const inLive=()=>{try{return tab==='live'&&!$('app').classList.contains('hidden')&&(LIVE.on||!!lkRoom)}catch(e){return false}};
+ const should=()=>!document.hidden&&!introOn()&&!inLive();
+ const tryPlay=()=>{const p=a.play();if(p&&p.catch)p.catch(()=>{});return p};
+ function sync(){if(should()){if(a.paused)tryPlay()}else if(!a.paused)a.pause()}
+ /* autoplay blocked? the first interaction anywhere unlocks it */
+ const evs=['pointerdown','touchend','keydown','click'];
+ const unlock=()=>{if(!should()||!a.paused)return;const p=a.play();
+  if(p&&p.then)p.then(()=>evs.forEach(t=>removeEventListener(t,unlock,true))).catch(()=>{})};
+ evs.forEach(t=>addEventListener(t,unlock,true));
+ document.addEventListener('visibilitychange',sync);
+ setInterval(sync,1000);sync();
+})();
+</script>
+</body></html>
