@@ -515,7 +515,7 @@ function printCertificate(){if(!$('certificateTeam')?.value){alert('Pumili muna 
 function showTab(id){document.querySelectorAll('.page').forEach(p=>p.classList.add('hidden'));$(id).classList.remove('hidden');document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===id));if(id==='bracket')renderBracket();if(id==='results')renderResults();if(id==='mvp')mvpRender();if(id==='standings')renderStandings();if(id==='certificates')renderCertificates();if(id==='gallery')renderGallery();if(id==='schedule')renderSchedule();if(id==='dashboard')renderLiveMatch();window.scrollTo({top:0,behavior:'smooth'})}
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function uid(){return 't'+Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
-function readImage(file){return new Promise((resolve,reject)=>{if(!file){resolve('');return}if(!file.type.startsWith('image/')){reject(Error('Please choose an image file'));return}const reader=new FileReader();reader.onload=()=>{const img=new Image();img.onload=()=>{const c=document.createElement('canvas'),scale=Math.min(1,360/Math.max(img.width,img.height));c.width=img.width*scale;c.height=img.height*scale;c.getContext('2d').drawImage(img,0,0,c.width,c.height);resolve(c.toDataURL('image/jpeg',.78))};img.onerror=reject;img.src=reader.result};reader.onerror=reject;reader.readAsDataURL(file)})}
+function readImage(file,max,isLogo){return new Promise((resolve,reject)=>{if(!file){resolve('');return}if(!file.type.startsWith('image/')){reject(Error('Please choose an image file'));return}const reader=new FileReader();reader.onload=()=>{const img=new Image();img.onload=()=>{const c=document.createElement('canvas'),scale=Math.min(1,(max||640)/Math.max(img.width,img.height));c.width=Math.round(img.width*scale);c.height=Math.round(img.height*scale);const cx=c.getContext('2d');cx.imageSmoothingEnabled=true;cx.imageSmoothingQuality='high';cx.drawImage(img,0,0,c.width,c.height);resolve(isLogo?c.toDataURL('image/webp',.92):c.toDataURL('image/jpeg',.86))};img.onerror=reject;img.src=reader.result};reader.onerror=reject;reader.readAsDataURL(file)})}
 function playerName(p){return typeof p==='string'?p:(p?.name||'')}
 function playerPhoto(p){return typeof p==='string'?'':(p?.photo||'')}
 function renderPlayerPhotoInputs(existing=[]){
@@ -550,7 +550,7 @@ async function saveTeam(e){
  try{
   const old=data.teams.find(t=>t.id===id);
   const logoFile=$('teamLogo').files[0];
-  const logo=logoFile?await readImage(logoFile):(old?.logo||'');
+  const logo=logoFile?await readImage(logoFile,512,true):(old?.logo||'');
   const groupPhotoFile=$('teamGroupPhoto')?.files?.[0];
   const groupPhoto=groupPhotoFile?await readImage(groupPhotoFile):(old?.groupPhoto||'');
   const oldPlayers=old?.players||[];
@@ -621,7 +621,7 @@ async function mgSaveTeam(){
  if(!name||!captain){toast('Ilagay ang team name at captain.');return}
  if(data.teams.some(x=>x.id!==t.id&&x.name.toLowerCase()===name.toLowerCase())){toast('May team na kapareho ang pangalan.');return}
  try{
-  const f=$('mgLogo').files[0];if(f)t.logo=await readImage(f);
+  const f=$('mgLogo').files[0];if(f)t.logo=await readImage(f,512,true);
   const old=t.name;t.name=name;t.captain=captain;
   if(old!==name)teamRegCleanup(old);
   persist();renderMgr();toast('Team details saved.');
@@ -1009,7 +1009,7 @@ window.drawRegQR=function(){$('regUrl').textContent=url();$('regUrl2').textConte
  let vq=null;const vurl=()=>new URL('viewer.html',location.href).href;
  window.drawViewQR=function(){$('viewUrl').textContent=vurl();if(vq||!window.QRCode)return;vq=new QRCode($('viewQR'),{text:vurl(),width:220,height:220,correctLevel:QRCode.CorrectLevel.M})};
  window.downloadViewQR=function(){const c=$('viewQR').querySelector('canvas');if(!c)return;const a=document.createElement('a');a.href=c.toDataURL('image/png');a.download='rosabaya-viewer-qr.png';a.click()};
- const small=src=>(!src||!String(src).startsWith('data:'))?Promise.resolve(src||''):new Promise(res=>{const i=new Image();i.onload=()=>{const k=Math.min(1,128/Math.max(i.width,i.height)),c=document.createElement('canvas');c.width=i.width*k;c.height=i.height*k;c.getContext('2d').drawImage(i,0,0,c.width,c.height);res(c.toDataURL('image/png'))};i.onerror=()=>res('');i.src=src});
+ const small=src=>(!src||!String(src).startsWith('data:'))?Promise.resolve(src||''):new Promise(res=>{const i=new Image();i.onload=()=>{if(Math.max(i.width,i.height)<=512){res(src);return}const k=512/Math.max(i.width,i.height),c=document.createElement('canvas');c.width=Math.round(i.width*k);c.height=Math.round(i.height*k);const cx=c.getContext('2d');cx.imageSmoothingEnabled=true;cx.imageSmoothingQuality='high';cx.drawImage(i,0,0,c.width,c.height);res(c.toDataURL('image/webp',.92))};i.onerror=()=>res('');i.src=src});
  window.publishViewer=async function(){const b=$('pubBtn'),st=$('pubStatus');b.disabled=true;st.textContent='Nagpa-publish...';
   try{const teams=await Promise.all(data.teams.map(async t=>({id:t.id,name:t.name,captain:t.captain,logo:await small(t.logo),players:(t.players||[]).map(p=>typeof p==='string'?{name:p,photo:'',role:''}:{name:p.name,photo:p.photo||'',role:p.role||'Flex'})})));
    const matches=allMatches().map(({m,label,section})=>({id:m.id,label,section,a:m.a,b:m.b,sa:m.sa,sb:m.sb,winner:m.winner,date:m.date,time:m.time,bestOf:m.bestOf,mvp:(m.mvp&&m.winner&&(m.mvp.teamId===m.a||m.mvp.teamId===m.b))?m.mvp:undefined}));
