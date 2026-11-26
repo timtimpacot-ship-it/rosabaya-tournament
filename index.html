@@ -503,10 +503,21 @@ header{display:none!important}main.wrap{width:auto!important;max-width:none!impo
 </style>
 <script>
 const KEY='rosabaya_ml_manager_v1';
+/* ===== Storage: IndexedDB (malaking limit) with localStorage fallback ===== */
+const IDB_NAME='rosabaya_ml_db',IDB_STORE='kv';
+function idbOpen(){return new Promise((res,rej)=>{if(!window.indexedDB)return rej(new Error('no indexedDB'));const r=indexedDB.open(IDB_NAME,1);r.onupgradeneeded=()=>r.result.createObjectStore(IDB_STORE);r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);r.onblocked=()=>rej(new Error('idb blocked'))})}
+async function idbGet(k){const db=await idbOpen();return new Promise((res,rej)=>{const q=db.transaction(IDB_STORE).objectStore(IDB_STORE).get(k);q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)})}
+async function idbSet(k,v){const db=await idbOpen();return new Promise((res,rej)=>{const tx=db.transaction(IDB_STORE,'readwrite');tx.objectStore(IDB_STORE).put(v,k);tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error);tx.onabort=()=>rej(tx.error)})}
+let idbChain=Promise.resolve();
+function storeData(str){idbChain=idbChain.then(async()=>{try{await idbSet(KEY,str);try{localStorage.removeItem(KEY)}catch(_){}}catch(e){try{localStorage.setItem(KEY,str)}catch(err){console.error('Storage save failed:',err);toast('Hindi ma-save sa browser storage. Bawasan ang laki/bilang ng uploaded photos.')}}});return idbChain}
+async function idbBoot(){let raw=null;try{raw=await idbGet(KEY)}catch(e){}
+ if(raw==null||raw===undefined){try{raw=localStorage.getItem(KEY)}catch(e){}if(raw){try{await idbSet(KEY,raw);localStorage.removeItem(KEY)}catch(e){}}}
+ return raw}
+
 let data={pin:'2468',eventName:'Rosabaya ML Tournament',season:'2026',teams:[],bracket:[],doubleElim:null,generated:false,liveMatch:{matchId:'',status:'UPCOMING',streamUrl:'',bestOf:3,scoreA:0,scoreB:0}};
 const $=id=>document.getElementById(id);
-function load(){try{const x=JSON.parse(localStorage.getItem(KEY));if(x&&Array.isArray(x.teams)){data={...data,...x,liveMatch:{matchId:'',status:'UPCOMING',streamUrl:'',bestOf:3,scoreA:0,scoreB:0,...(x.liveMatch||{})}};data.teams=data.teams.map(t=>({...t,players:(t.players||[]).map(p=>{if(!p||typeof p!=='object')return p;return {...p,role:p.role==='Assassin'?'Core':p.role==='Support'?'Flex':p.role}})}));}}catch(e){}}
-function persist(){try{localStorage.setItem(KEY,JSON.stringify(data))}catch(err){console.error('Local storage save failed:',err);toast('Na-save sa kasalukuyang session pero hindi ma-save sa browser storage. Bawasan ang laki/bilang ng uploaded photos.')}try{renderAll()}catch(err){console.error('Dashboard refresh failed:',err);toast('Na-save ang data pero may display error. I-refresh ang page.')}teamSync()}
+function load(raw){try{const x=JSON.parse(raw!==undefined?raw:localStorage.getItem(KEY));if(x&&Array.isArray(x.teams)){data={...data,...x,liveMatch:{matchId:'',status:'UPCOMING',streamUrl:'',bestOf:3,scoreA:0,scoreB:0,...(x.liveMatch||{})}};data.teams=data.teams.map(t=>({...t,players:(t.players||[]).map(p=>{if(!p||typeof p!=='object')return p;return {...p,role:p.role==='Assassin'?'Core':p.role==='Support'?'Flex':p.role}})}));}}catch(e){}}
+function persist(){storeData(JSON.stringify(data));try{renderAll()}catch(err){console.error('Dashboard refresh failed:',err);toast('Na-save ang data pero may display error. I-refresh ang page.')}teamSync()}
 function toast(msg){$('toast').textContent=msg;$('toast').classList.remove('hidden');setTimeout(()=>$('toast').classList.add('hidden'),2400)}
 function login(){if($('pinInput').value===data.pin){sessionStorage.setItem('rosabayaAdmin','yes');$('loginScreen').classList.add('hidden');$('app').classList.remove('hidden');renderAll()}else $('loginError').textContent='Incorrect PIN. Please try again.'}
 function logout(){sessionStorage.removeItem('rosabayaAdmin');$('app').classList.add('hidden');$('loginScreen').classList.remove('hidden');$('pinInput').value=''}
@@ -997,7 +1008,7 @@ function changePin(){if($('oldPin').value!==data.pin){toast('Current PIN is inco
 function exportData(){const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='rosabaya-ml-tournament-backup.json';a.click();URL.revokeObjectURL(url);toast('Backup downloaded.')}
 function importData(e){const f=e.target.files[0];if(!f)return;const reader=new FileReader();reader.onload=()=>{try{const x=JSON.parse(reader.result);if(!Array.isArray(x.teams)||typeof x.pin!=='string')throw Error();if(!confirm('Restore backup? This replaces current tournament data.'))return;data={...data,...x};persist();toast('Backup restored.')}catch(err){toast('Invalid backup file.')}e.target.value=''};reader.readAsText(f)}
 function resetAll(){if(!confirm('Sigurado ka bang burahin lahat ng tournament data? Hindi ito mare-recover maliban kung may backup.'))return;const pin=data.pin;teamRegCleanup();data={pin,eventName:'Rosabaya ML Tournament',season:'2026',teams:[],bracket:[],doubleElim:null,generated:false,liveMatch:{matchId:'',status:'UPCOMING',streamUrl:'',bestOf:3,scoreA:0,scoreB:0}};persist();toast('Tournament data reset.')}
-load();if(sessionStorage.getItem('rosabayaAdmin')==='yes'){$('loginScreen').classList.add('hidden');$('app').classList.remove('hidden');renderAll()}
+idbBoot().then(raw=>{load(raw===null||raw===undefined?undefined:raw);if(sessionStorage.getItem('rosabayaAdmin')==='yes'){$('loginScreen').classList.add('hidden');$('app').classList.remove('hidden');renderAll()}});
 </script>
 
 <style>
@@ -1432,7 +1443,7 @@ async function mvpDownload(){const r=mvpObj();if(!r||!r.p){toast('Pumili muna ng
    const row=rows&&rows[0];
    if(!row||!row.data){say('Wala pang naka-save na data sa cloud.');toast('Wala pang data sa cloud.');return}
    if(!skipConfirm&&!confirm('I-load ang data mula sa cloud ('+when(row.updated_at)+')? Mapapalitan ang data sa PC na ito.'))return;
-   try{localStorage.setItem(KEY,JSON.stringify(row.data))}catch(_){alert('Hindi kasya ang data sa browser storage ng PC na ito (masyadong malaki ang photos).');return}
+   {const str=JSON.stringify(row.data);try{await idbSet(KEY,str);try{localStorage.removeItem(KEY)}catch(_){}}catch(_){try{localStorage.setItem(KEY,str)}catch(__){alert('Hindi kasya ang data sa browser storage ng PC na ito (masyadong malaki ang photos).');return}}}
    lsSet(TK,row.updated_at);location.reload()
   }catch(e){say('Hindi na-load: '+e.message)}}
  const sched=()=>{clearTimeout(tm);tm=setTimeout(()=>{if(data.teams.length)cloudSave(false)},4000)};
