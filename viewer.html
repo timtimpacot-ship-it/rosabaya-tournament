@@ -147,6 +147,7 @@ body::after{right:0;background:repeating-linear-gradient(65deg,transparent 0 14p
 .bk-s{min-width:18px;text-align:right;font-weight:900;font-size:18px;color:#fff}
 .bk-r.lose .bk-n,.bk-r.lose .bk-s{color:#9db1dd;font-weight:700}
 .bk-vs{display:flex;align-items:center;gap:8px;color:#3ea0ff;font-size:10px;font-weight:900;letter-spacing:1px}.bk-vs i{flex:1;height:1px;background:#1d3978}
+.bk-m.bye{opacity:.6}.bk-n.byeslot{font-style:italic;color:#7d8fb5;letter-spacing:1px}.bk-m.bye .bk-lg:empty{background:#0e1d44;border:1px dashed #2b4a8f}
 .bk-meta{margin-top:4px;padding-top:5px;border-top:1px dashed #1d3978;font-size:11px;font-weight:700;color:#7da3e8}
 .bk-champ{position:absolute;left:50%;transform:translateX(-50%);top:calc(50% + 80px);width:min(100%,210px);aspect-ratio:200/190}
 .bk-champ svg{position:absolute;inset:0;width:100%;height:100%}
@@ -358,6 +359,7 @@ const logo=t=>`<span class="lg">${t&&t.logo?`<img src="${t.logo}" alt="${esc(t.n
 const upLogo=t=>`<span class="up-lg">${t&&t.logo?`<img src="${t.logo}" alt="${esc(t.name||'')}">`:esc((t?.name||'TBD').slice(0,2).toUpperCase())}</span>`;
 const miniLogo=t=>`<span class="mini-lg">${t&&t.logo?`<img src="${t.logo}" alt="${esc(t.name||'')}">`:esc((t?.name||'TBD').slice(0,2).toUpperCase())}</span>`;
 const nm=id=>team(id)?.name||'TBD';
+const fmtT=t=>{t=String(t==null?'':t).trim();if(!t)return'';const m=/^(\d{1,2}):(\d{2})(?::\d{2})?\s*([ap]\.?m\.?)?$/i.exec(t);if(!m)return t;let h=+m[1];const ap=m[3]?m[3].replace(/\./g,'').toUpperCase():(h>=12?'PM':'AM');h=h%12||12;return h+':'+m[2]+' '+ap};
 const fmtD=d=>new Date(d+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
 const done=m=>m.a&&m.b&&m.winner;
 
@@ -372,7 +374,7 @@ function upcomingCard(m){
    <div class="up-vs"><small>${esc(m.label||'MATCH')}</small><strong>VS</strong><span>⚡</span></div>
    <div class="up-tm right"><span class="up-name">${esc(nm(m.b))}</span>${upLogo(tb)}</div>
   </div>
-  <div class="up-foot"><span>◷ ${esc(m.time||'TBA')}</span><span>${esc(m.date||'TBA')}</span></div>
+  <div class="up-foot"><span>◷ ${esc(fmtT(m.time)||'TBA')}</span><span>${esc(m.date||'TBA')}</span></div>
  </div>`;
 }
 
@@ -415,7 +417,7 @@ function bracketCard(m){
  return `<div class="brk-card">
   <div class="brk-top"><span>${esc(m.label)}</span><span>BEST OF ${Number(m.bestOf||3)}</span></div>
   ${[['a','sa'],['b','sb']].map(([k,s])=>`<div class="brk-row ${w&&w===m[k]?'w':''}">${logo(team(m[k]))}<div class="n">${esc(nm(m[k]))}</div>${showScore?`<div class="s">${esc(m[s]===''?0:m[s])}</div>`:''}</div>`).join('')}
-  ${m.date||m.time?`<div class="brk-foot"><span>◷ ${esc(m.time||'')}</span><span>${esc(m.date||'')}</span></div>`:''}
+  ${m.date||m.time?`<div class="brk-foot"><span>◷ ${esc(fmtT(m.time))}</span><span>${esc(m.date||'')}</span></div>`:''}
  </div>`;
 }
 
@@ -424,10 +426,12 @@ const isThird=m=>/third|3rd|bronze/i.test([m.section,m.round,m.label].filter(Boo
 const bkLogo=t=>`<span class="bk-lg">${t&&t.logo?`<img src="${t.logo}" alt="${esc(t.name||'')}">`:esc((t?.name||'?').slice(0,2).toUpperCase())}</span>`;
 function brkCard(m,final){
  const w=m.winner,showScore=!!(m.a&&m.b&&(m.sa!==''||m.sb!==''||w));
- const row=(k,sc)=>`<div class="bk-r${w&&w!==m[k]?' lose':''}">${bkLogo(team(m[k]))}<span class="bk-n">${esc(nm(m[k]))}</span>${showScore?`<span class="bk-s">${esc(m[sc]===''?0:m[sc])}</span>`:''}</div>`;
- const meta=(!w&&(m.date||m.time))?`<div class="bk-meta">◷ ${esc(m.time||'TBA')}${m.date?' · '+esc(fmtD(m.date)):''}</div>`:'';
- return `<div class="bk-m${final?' final':''}" title="${esc(m.label||'')}">${row('a','sa')}<div class="bk-vs"><i></i><span>VS</span><i></i></div>${row('b','sb')}${meta}</div>`;
+ const bye=!!w&&!!(m.a||m.b)&&!(m.a&&m.b);                         /* BYE: one side has no team, the other team advances */
+ const row=(k,sc)=>{const miss=bye&&!m[k];return `<div class="bk-r${w&&w!==m[k]?' lose':''}">${miss?'<span class="bk-lg"></span>':bkLogo(team(m[k]))}<span class="bk-n${miss?' byeslot':''}">${miss?'BYE':esc(nm(m[k]))}</span>${showScore?`<span class="bk-s">${esc(m[sc]===''?0:m[sc])}</span>`:''}</div>`};
+ const meta=(!w&&(m.date||m.time))?`<div class="bk-meta">◷ ${esc(fmtT(m.time)||'TBA')}${m.date?' · '+esc(fmtD(m.date)):''}</div>`:'';
+ return `<div class="bk-m${final?' final':''}${bye?' bye':''}" title="${esc(m.label||'')}">${row('a','sa')}<div class="bk-vs"><i></i><span>VS</span><i></i></div>${row('b','sb')}${meta}</div>`;
 }
+
 function champBadge(t){
  return `<div class="bk-champ"><svg viewBox="0 0 200 190" aria-hidden="true"><defs><linearGradient id="shG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#10224f"/><stop offset="1" stop-color="#091330"/></linearGradient></defs><path d="M6 6H194V132L100 184L6 132Z" fill="url(#shG)" stroke="#d9a42f" stroke-width="2.5" stroke-linejoin="round"/><path d="M14 14H186V128L100 174L14 128Z" fill="none" stroke="#d9a42f55" stroke-width="1"/></svg><div><span class="cr">👑</span><b>CHAMPION</b><span>${esc(t.name)}</span></div></div>`;
 }
