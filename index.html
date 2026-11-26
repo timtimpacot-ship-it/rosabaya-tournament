@@ -269,6 +269,21 @@ header{display:none!important}main.wrap{width:auto!important;max-width:none!impo
 .mvp-row b{color:var(--gold)}
 .mvp-ctl{max-width:540px;margin:0 auto 12px}.mvp-ctl label{display:block;margin:8px 0 2px;font-size:12px}.mvp-ctl input[type=range]{width:100%;padding:0}.mvp-cv{touch-action:none;cursor:grab}
 </style>
+<style>
+/* Template bracket (double elimination diagram + setup) */
+.tplsetup{margin:14px 0}.tplctl{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}.tplctl label{display:grid;gap:6px;font-size:12px;color:var(--muted);font-weight:700}.tplctl select{min-width:230px}
+.tplinfo{margin:12px 0 4px;color:var(--cyan);font-size:13px}.tplbtns{display:flex;flex-wrap:wrap;gap:9px;align-items:center;margin:10px 0}
+.tplmanual{margin-top:8px;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:#0a1530}.tplmanual summary{cursor:pointer;font-weight:800;color:var(--gold)}
+.tplentries{display:grid;gap:8px;margin-top:10px}.tplentry{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center;padding:8px 10px;border:1px solid var(--line);border-radius:9px;background:#0c1a38}.tplentry b{color:var(--gold);min-width:34px}.tplentry small{color:var(--muted);font-size:10px;letter-spacing:.08em;min-width:62px}
+.tplsel{display:flex;align-items:center;gap:6px}.tplsel em{font-style:normal;font-size:11px;color:var(--cyan);font-weight:800;white-space:nowrap}.tplsel select{min-width:150px;padding:6px 8px}.tplbye{padding:6px 12px;border:1px dashed var(--line);border-radius:8px;color:var(--muted);font-size:12px}.tplwin{color:var(--muted);font-style:italic;font-size:12px}
+.tplwrap{overflow:auto;border:1px solid var(--line);border-radius:12px;background:#07101f;padding:10px 10px 18px;margin-top:12px;max-height:82vh}.tplcanvas{position:relative}.tplsvg{position:absolute;left:0;top:0;pointer-events:none}.tzone{position:absolute;font-size:12px;font-weight:900;letter-spacing:.14em;color:var(--gold)}
+.tcard{position:absolute;width:168px;height:44px;border-radius:5px;background:#2a3550;border:1px solid #3f5173;cursor:pointer;box-shadow:0 2px 6px #0006;transition:border-color .15s}.tcard:hover{border-color:var(--gold)}.tcard.ready{border-color:var(--cyan);box-shadow:0 0 0 1px #13baff55,0 2px 8px #0006}.tcard.bye{opacity:.5}.tcard.nec{border-style:dashed;opacity:.5;cursor:default}
+.tno{position:absolute;left:-26px;top:50%;transform:translateY(-50%);width:22px;text-align:right;font-size:10px;color:#7f8dab}
+.trow{display:flex;align-items:center;gap:5px;height:21px;padding-right:6px;font-size:11.5px;color:var(--txt);overflow:hidden}.trow+.trow{border-top:1px solid #3f5173}.trow.w{background:#24476f;font-weight:700}
+.tseed{width:20px;height:100%;background:#37466a;font-style:normal;font-size:10px;display:grid;place-items:center;color:#d3dcf0;flex:none}.tname{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.tname.ph{font-style:italic;color:#8fa1c6;font-weight:400}.tscore{min-width:14px;text-align:center;font-size:11px;color:var(--gold)}.tlogo{width:14px;height:14px;border-radius:3px;object-fit:cover;flex:none}
+.tplmodal{position:fixed;inset:0;background:#000b;z-index:90;display:grid;place-items:center;padding:16px}.tplmodal.hidden{display:none}.tplmodal-card{position:relative;width:min(430px,100%);max-height:90vh;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 18px 16px}.tplx{position:absolute;right:10px;top:8px;background:none;border:0;color:var(--txt);font-size:20px;cursor:pointer}
+#bracketArea:has(.tplwrap){background:transparent!important;border:0!important;padding:0!important;color:var(--txt)!important}#bracketArea:has(.tplwrap) .smalltext{color:var(--muted)!important}
+</style>
 </head>
 <body>
 <div id="loginScreen" class="login">
@@ -398,9 +413,11 @@ header{display:none!important}main.wrap{width:auto!important;max-width:none!impo
  <div id="teamGallery"></div>
 </section>
 <section id="bracket" class="page hidden">
- <div class="hero"><div><div class="eyebrow">ROAD TO THE CHAMPIONSHIP</div><h1>Tournament bracket</h1><p>Double elimination · Upper Bracket + Lower Bracket · Two losses eliminate a team.</p></div><div class="actions"><button class="btn" onclick="generateBracket()">Generate / rebuild</button><button class="btn danger" onclick="deleteBracket()">Delete bracket</button></div></div>
- <div class="notice">Generating or rebuilding a bracket replaces the current bracket and clears its match scores. Make sure final na ang registered teams.</div>
+ <div class="hero"><div><div class="eyebrow">ROAD TO THE CHAMPIONSHIP</div><h1>Tournament bracket</h1><p>Double elimination · Upper Bracket + Lower Bracket · Two losses eliminate a team.</p></div><div class="actions"><button class="btn danger" onclick="deleteBracket()">Delete bracket</button></div></div>
+ <div class="notice">Pumili ng bilang ng teams para lumabas ang bracket template. Ang pagpapalit ng bilang ng teams ay magre-reset ng match scores.</div>
+ <div id="bracketSetup"></div>
  <div id="bracketArea"></div>
+ <div id="tplModal" class="tplmodal hidden" onclick="if(event.target===this)tplClose()"><div class="tplmodal-card"><button class="tplx" type="button" aria-label="Close" onclick="tplClose()">✕</button><div id="tplModalBody"></div></div></div>
 </section>
 <section id="schedule" class="page hidden">
  <div class="hero"><div><div class="eyebrow">MATCH PLANNING</div><h1>Match Schedule</h1><p>Magtakda ng petsa at oras para sa bawat bracket match.</p></div></div>
@@ -488,7 +505,7 @@ header{display:none!important}main.wrap{width:auto!important;max-width:none!impo
 const KEY='rosabaya_ml_manager_v1';
 let data={pin:'2468',eventName:'Rosabaya ML Tournament',season:'2026',teams:[],bracket:[],doubleElim:null,generated:false,liveMatch:{matchId:'',status:'UPCOMING',streamUrl:'',bestOf:3,scoreA:0,scoreB:0}};
 const $=id=>document.getElementById(id);
-function load(){try{const x=JSON.parse(localStorage.getItem(KEY));if(x&&Array.isArray(x.teams)){data={...data,...x,liveMatch:{matchId:'',status:'UPCOMING',streamUrl:'',bestOf:3,scoreA:0,scoreB:0,...(x.liveMatch||{})}};data.teams=data.teams.map(t=>({...t,players:(t.players||[]).map(p=>{if(!p||typeof p!=='object')return p;return {...p,role:p.role==='Assassin'?'Core':p.role==='Support'?'Flex':p.role}})}));}}catch(e){}if(data.teams.length>=2&&!data.generated){buildDoubleElim();try{localStorage.setItem(KEY,JSON.stringify(data))}catch(err){console.error(err)}}}
+function load(){try{const x=JSON.parse(localStorage.getItem(KEY));if(x&&Array.isArray(x.teams)){data={...data,...x,liveMatch:{matchId:'',status:'UPCOMING',streamUrl:'',bestOf:3,scoreA:0,scoreB:0,...(x.liveMatch||{})}};data.teams=data.teams.map(t=>({...t,players:(t.players||[]).map(p=>{if(!p||typeof p!=='object')return p;return {...p,role:p.role==='Assassin'?'Core':p.role==='Support'?'Flex':p.role}})}));}}catch(e){}}
 function persist(){try{localStorage.setItem(KEY,JSON.stringify(data))}catch(err){console.error('Local storage save failed:',err);toast('Na-save sa kasalukuyang session pero hindi ma-save sa browser storage. Bawasan ang laki/bilang ng uploaded photos.')}try{renderAll()}catch(err){console.error('Dashboard refresh failed:',err);toast('Na-save ang data pero may display error. I-refresh ang page.')}teamSync()}
 function toast(msg){$('toast').textContent=msg;$('toast').classList.remove('hidden');setTimeout(()=>$('toast').classList.add('hidden'),2400)}
 function login(){if($('pinInput').value===data.pin){sessionStorage.setItem('rosabayaAdmin','yes');$('loginScreen').classList.add('hidden');$('app').classList.remove('hidden');renderAll()}else $('loginError').textContent='Incorrect PIN. Please try again.'}
@@ -568,7 +585,6 @@ async function saveTeam(e){
   const team={id:id||uid(),name,captain,players,logo,groupPhoto};
   if(old)data.teams=data.teams.map(t=>t.id===id?team:t);else data.teams.push(team);
   // Generate a first bracket automatically once the second team is registered.
-  if(!old&&!data.generated&&data.teams.length>=2)buildDoubleElim();
   // Clear the form before rendering/persisting so it never retains the previous roster.
   resetTeamForm();
   persist();
@@ -669,11 +685,11 @@ function buildDoubleElim(){
  data.doubleElim={upper:upperRounds,lower:lowerRounds,grandFinal:makeMatch('GF',0,0),resetFinal:null};
  data.bracket=[];data.generated=true;recalculateDoubleElim();
 }
-function generateBracket(){if(data.teams.length<2){toast('Mag-register muna ng at least 2 teams.');return}if(data.generated&&!confirm('Rebuild bracket? Mawawala ang lahat ng current match scores at schedules.'))return;buildDoubleElim();data.liveMatch={matchId:'',status:'UPCOMING',streamUrl:'',bestOf:3,scoreA:0,scoreB:0};persist();showTab('bracket');toast('Double-elimination bracket generated: Upper Bracket + Lower Bracket.');}
+function generateBracket(){showTab('bracket')}
 function seriesWinner(m){if(!m.a&&!m.b)return null;if(!m.a||!m.b)return m.a||m.b;const need=Math.floor((Number(m.bestOf)||3)/2)+1,a=Number(m.sa)||0,b=Number(m.sb)||0;return a>=need&&a>b?m.a:(b>=need&&b>a?m.b:null)}
 function putSlot(match,side,value){if(!match)return;const previous=data.doubleElim?._previous?.[match.id]?.[side];if(previous!==value){match.sa='';match.sb='';match.winner=null}match[side]=value}
 function recalculateDoubleElim(){
- const d=data.doubleElim;if(!d)return;
+ const d=data.doubleElim;if(!d)return;if(d.tpl){tplRecalc(d);return}
  d._previous={};[...d.upper.flat(),...d.lower.flat(),d.grandFinal,d.resetFinal].filter(Boolean).forEach(m=>d._previous[m.id]={a:m.a,b:m.b});
  // Clear feeder slots but preserve scores when the same teams remain in a match.
  d.upper.slice(1).forEach(r=>r.forEach(m=>{m.a=null;m.b=null;m.winner=null}));
@@ -700,11 +716,198 @@ function teamLogoHTML(team,cls='team-logo-thumb'){return team&&team.logo?`<span 
 function getTeam(id){return data.teams.find(t=>t.id===id)}
 function roundName(i,total){if(i===total-1)return 'UPPER BRACKET FINAL';if(i===total-2)return 'UPPER SEMIFINALS';if(i===total-3)return 'UPPER QUARTERFINALS';return 'UPPER ROUND '+(i+1)}
 function matchHTML(m,r,i){const a=getTeam(m.a),b=getTeam(m.b),done=m.winner&&m.a&&m.b;return `<div class="match"><div class="match-top"><span>Match ${i+1}</span><span>${done?'COMPLETED':(!m.a||!m.b?'BYE / PENDING':'PENDING')}</span></div><div class="slot ${m.winner===m.a&&m.a?'winner':''}">${teamLogoHTML(a)}<span class="name">${a?esc(a.name):'<span class="muted">TBD</span>'}</span></div><div class="slot ${m.winner===m.b&&m.b?'winner':''}">${teamLogoHTML(b)}<span class="name">${b?esc(b.name):'<span class="muted">TBD</span>'}</span></div>${m.a&&m.b?`<div class="field" style="margin-top:8px"><label>Series format</label><select id="${m.id}bo"><option value="3" ${Number(m.bestOf||3)===3?'selected':''}>BO3</option><option value="5" ${Number(m.bestOf||3)===5?'selected':''}>BO5</option></select></div><div class="row" style="margin-top:8px"><span class="smalltext">Game wins</span><div class="row"><input class="scoreinput" type="number" min="0" max="${Math.floor((Number(m.bestOf||3))/2)+1}" value="${esc(m.sa)}" id="${m.id}a" aria-label="Game wins ${a?.name||'team A'}"><span class="muted">–</span><input class="scoreinput" type="number" min="0" max="${Math.floor((Number(m.bestOf||3))/2)+1}" value="${esc(m.sb)}" id="${m.id}b" aria-label="Game wins ${b?.name||'team B'}"></div></div><div class="match-actions"><button class="btn small" onclick="saveScore('${m.id}')">Save result</button></div>`:m.winner?'<div class="smalltext" style="margin-top:7px">Bye advances automatically</div>':''}</div>`}
-function renderBracket(){const area=$('bracketArea');if(!data.generated||(!data.doubleElim&&!data.bracket.length)){area.innerHTML='<div class="empty">Wala pang bracket. Mag-register ng at least 2 teams, then click Generate bracket.</div>';return}
+function renderBracketLegacy(){const area=$('bracketArea');if(!data.generated||(!data.doubleElim&&!data.bracket.length)){area.innerHTML='<div class="empty">Wala pang bracket. Mag-register ng at least 2 teams, then click Generate bracket.</div>';return}
  if(!data.doubleElim){const total=data.bracket.length,champion=data.bracket[total-1][0]?.winner;area.innerHTML=`<div class="bracket-scroll"><div class="bracket">${data.bracket.map((round,r)=>`<div class="round"><h3>${r===total-1?'🏆 GRAND FINALS':roundName(r,total)}</h3>${round.map((m,i)=>matchHTML(m,r,i)).join('')}</div>`).join('')}</div></div>${champion?`<div class="champion"><div class="cup">🏆</div><div class="eyebrow">TOURNAMENT CHAMPION</div><h2>${esc(getTeam(champion)?.name||'Champion')}</h2></div>`:''}`;return}
  const d=data.doubleElim,renderRounds=(rounds,label)=>`<section class="de-section"><div class="de-section-title">${label}</div><div class="bracket-scroll"><div class="bracket">${rounds.map((round,r)=>`<div class="round"><h3>${label} ${r+1}</h3>${round.map((m,i)=>matchHTML(m,r,i)).join('')}</div>`).join('')}</div></div></section>`;
  const champ=d.resetFinal?.winner||d.grandFinal.winner;area.innerHTML=`<div class="de-intro"><strong>DOUBLE ELIMINATION FORMAT</strong><span>Two losses = eliminated · Win the Upper Bracket or fight back through the Lower Bracket.</span></div>${renderRounds(d.upper,'UPPER BRACKET')}${d.lower.length?renderRounds(d.lower,'LOWER BRACKET'):'<div class="de-section"><div class="de-section-title">LOWER BRACKET</div><div class="empty">No lower-bracket matches are required for this team count until an Upper Bracket loss occurs.</div></div>'}<section class="de-section"><div class="de-section-title">GRAND FINAL</div><div class="bracket-scroll"><div class="bracket"><div class="round grand-final-round"><div class="final-trophy-mark">🏆</div><h3>GRAND FINALS</h3>${matchHTML(d.grandFinal,0,0)}</div>${d.resetFinal?`<div class="round"><h3>RESET FINAL</h3>${matchHTML(d.resetFinal,0,0)}</div>`:''}</div></div></section>${champ?`<div class="champion"><div class="cup">🏆</div><div class="eyebrow">TOURNAMENT CHAMPION</div><h2>${esc(getTeam(champ)?.name||'Champion')}</h2><p class="muted">Double-elimination champion</p></div>`:''}`;
 }
+/* ===== TEMPLATE BRACKET: double elimination with play-in / byes ===== */
+const TPL_MIN=3,TPL_MAX=32;
+const tplUI={manual:true};
+function tplSeedOrder(n){if(n===1)return[1];const p=tplSeedOrder(n/2),o=[];p.forEach(x=>{o.push(x,n+1-x)});return o}
+function tplMk(no,src){return{id:'M'+no+'_'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),no,src,a:null,b:null,sa:'',sb:'',bestOf:3,winner:null,date:'',time:''}}
+function tplAll(d){const out=[...d.upper.flat(),...d.lower.flat(),d.grandFinal];if(d.resetFinal)out.push(d.resetFinal);return out.filter(Boolean).sort((x,y)=>x.no-y.no)}
+function tplHasScores(d){return !!d&&tplAll(d).some(m=>m.sa!==''||m.sb!=='')}
+function tplBuild(N,seeds){
+ let P=1;while(P*2<=N)P*=2;
+ let S=P,k=0,mode='bye';
+ if(N!==P){if(N-P<=P/2&&P>=4){k=N-P;mode='playin'}else S=P*2}
+ const r=Math.round(Math.log2(S));
+ const W=m=>({t:'w',r:m}),L=m=>({t:'l',r:m});
+ const order=tplSeedOrder(S);let u1=[];for(let i=0;i<S/2;i++)u1.push([order[2*i],order[2*i+1]]);
+ if(u1.length>=4){const h=u1.length/2;u1=u1.slice(0,h).concat(u1.slice(h).reverse())}
+ const upper=[],lower=[],upperNames=[],lowerNames=[];
+ const pin=[];
+ if(k){for(let j=1;j<=k;j++)pin.push(tplMk(0,{a:{t:'seed',n:P-j+1},b:{t:'seed',n:P+j}}));upper.push(pin);upperNames.push('Play-in')}
+ const slot=s=>(k&&s>P-k)?W(pin[P-s]):{t:'seed',n:s};
+ const ub=[u1.map(([x,y])=>tplMk(0,{a:slot(x),b:slot(y)}))];
+ for(let u=2;u<=r;u++){const prev=ub[u-2];ub.push(Array.from({length:prev.length/2},(_,i)=>tplMk(0,{a:W(prev[2*i]),b:W(prev[2*i+1])})))}
+ ub.forEach((rd,i)=>{upper.push(rd);upperNames.push('Round '+(i+1))});
+ // lower bracket
+ const pre=[],preOf=new Map(),T=[];
+ if(k){for(let j=1;j<=k;j++)T.push(ub[0].find(m=>m.src.a.r===pin[j-1]||m.src.b.r===pin[j-1]));
+  for(let j=1;j<=k;j++){const last=ub[0][ub[0].length-1];const partner=k===1?(last===T[0]?ub[0][0]:last):T[j%k];const pm=tplMk(0,{a:L(partner),b:L(pin[j-1])});pre.push(pm);preOf.set(partner,pm)}}
+ const lb1=[];
+ for(let i=0;i<ub[0].length/2;i++){const m1=ub[0][2*i],m2=ub[0][2*i+1],r1=preOf.has(m1),r2=preOf.has(m2);let a,b;
+  if(r1&&!r2){a=L(m2);b=W(preOf.get(m1))}else if(r2&&!r1){a=L(m1);b=W(preOf.get(m2))}
+  else{a=r1?W(preOf.get(m1)):L(m1);b=r2?W(preOf.get(m2)):L(m2)}
+  lb1.push(tplMk(0,{a,b}))}
+ lb1.reverse();
+ const lbList=[lb1];let prevLb=lb1;
+ for(let u=2;u<=r;u++){
+  const losers=ub[u-1],drop=(u>=3&&u%2===1)?losers.slice().reverse():losers;
+  const dr=prevLb.map((m,i)=>tplMk(0,{a:L(drop[i]),b:W(m)}));lbList.push(dr);prevLb=dr;
+  if(u<r){const c=Array.from({length:prevLb.length/2},(_,i)=>tplMk(0,{a:W(prevLb[2*i]),b:W(prevLb[2*i+1])}));lbList.push(c);prevLb=c}
+ }
+ if(pre.length)lower.push(pre);lbList.forEach(x=>lower.push(x));lower.forEach((x,i)=>lowerNames.push('Round '+(i+1)));
+ const gf=tplMk(0,{a:W(ub[r-1][0]),b:W(prevLb[0])});
+ // numbering (display order)
+ const seq=[];if(k)seq.push(pin);seq.push(ub[0]);if(pre.length)seq.push(pre);
+ for(let u=2;u<=r;u++){seq.push(ub[u-1]);if(u===2)seq.push(lbList[0],lbList[1]);else seq.push(lbList[2*(u-2)],lbList[2*(u-2)+1])}
+ let n=0;seq.forEach(rd=>rd.forEach(m=>{m.no=++n}));gf.no=++n;
+ const all=[...upper.flat(),...lower.flat(),gf];
+ all.forEach(m=>['a','b'].forEach(sd=>{const s=m.src[sd];if(s.r){s.no=s.r.no;delete s.r}}));
+ const keep={};Object.keys(seeds||{}).forEach(x=>{if(+x<=N&&seeds[x])keep[x]=seeds[x]});
+ return{upper,lower,grandFinal:gf,resetFinal:null,upperNames,lowerNames,tpl:{n:N,S,P,k,r,mode,seeds:keep,resetNo:gf.no+1}};
+}
+function tplRecalc(d){
+ const T=d.tpl,res={},ms=tplAll(d).filter(m=>m!==d.resetFinal);
+ const val=s=>{if(s.t==='seed'){if(s.n>T.n)return'BYE';const id=T.seeds[s.n];return id&&data.teams.some(t=>t.id===id)?id:null}const x=res[s.no];if(!x)return null;return s.t==='w'?x.w:x.l};
+ ms.forEach(m=>{
+  const A=val(m.src.a),B=val(m.src.b),ta=(A&&A!=='BYE')?A:null,tb=(B&&B!=='BYE')?B:null;
+  if(ta!==m.a||tb!==m.b){m.sa='';m.sb='';m.winner=null}
+  m.a=ta;m.b=tb;m.byeA=A==='BYE';m.byeB=B==='BYE';
+  let w=null,l=null;
+  if(A==='BYE'&&B==='BYE'){w='BYE';l='BYE'}
+  else if(A==='BYE'){w=tb;l=tb?'BYE':null}
+  else if(B==='BYE'){w=ta;l=ta?'BYE':null}
+  else if(ta&&tb){w=seriesWinner(m);l=w?(w===ta?tb:ta):null}
+  m.winner=(w&&w!=='BYE')?w:null;res[m.no]={w,l};
+ });
+ const gf=d.grandFinal;
+ if(gf.a&&gf.b&&gf.winner&&gf.winner===gf.b){
+  if(!d.resetFinal){d.resetFinal=tplMk(T.resetNo,{a:{t:'w',no:gf.no},b:{t:'w',no:gf.no}});d.resetFinal.byeA=false;d.resetFinal.byeB=false}
+  const m=d.resetFinal;if(m.a!==gf.a||m.b!==gf.b){m.sa='';m.sb='';m.winner=null}
+  m.a=gf.a;m.b=gf.b;m.winner=seriesWinner(m);
+ }else d.resetFinal=null;
+}
+
+function tplDescribe(T){
+ const m=2*T.n-2;let f;
+ if(T.mode==='playin')f=`Play-in: ${T.k} match${T.k>1?'es':''} (seeds ${T.P-T.k+1}–${T.n}) → ${T.P}-team double elimination`;
+ else if(T.S>T.n)f=`${T.S}-slot bracket · ${T.S-T.n} BYE para sa top seed${T.S-T.n>1?'s':''}`;
+ else f=`Straight ${T.S}-team double elimination`;
+ return `${f} · ${m} matches (+1 Grand Final reset kung kailangan)`;
+}
+function tplLayout(d){
+ const T=d.tpl,CW=230,H=54,TOP=34,LEFT=32,pos={},base=T.k?1:0,us=T.k?1:0,ls=T.k?1:0,ub1=d.upper[us],lb1=d.lower[ls];
+ ub1.forEach((m,i)=>pos[m.no]={col:base,y:i*H});
+ for(let ri=us+1;ri<d.upper.length;ri++)d.upper[ri].forEach(m=>{const a=pos[m.src.a.no],b=pos[m.src.b.no];pos[m.no]={col:base+ri-us,y:(a.y+b.y)/2}});
+ if(T.k)d.upper[0].forEach(m=>{const t=ub1.find(x=>x.src.a.no===m.no||x.src.b.no===m.no);pos[m.no]={col:0,y:pos[t.no].y+24}});
+ let ubBottom=0;Object.values(pos).forEach(p=>{ubBottom=Math.max(ubBottom,p.y)});
+ const lbTop=ubBottom+130;
+ lb1.forEach((m,i)=>pos[m.no]={col:base,y:lbTop+i*2*H});
+ for(let li=ls+1;li<d.lower.length;li++)d.lower[li].forEach(m=>{const ys=[m.src.a,m.src.b].filter(s=>s.t==='w').map(s=>pos[s.no].y);pos[m.no]={col:base+li-ls,y:ys.reduce((x,y)=>x+y,0)/ys.length}});
+ if(T.k)d.lower[0].forEach(m=>{const t=lb1.find(x=>(x.src.a.t==='w'&&x.src.a.no===m.no)||(x.src.b.t==='w'&&x.src.b.no===m.no));pos[m.no]={col:0,y:(t?pos[t.no].y:lbTop)+24}});
+ const ubf=d.upper[d.upper.length-1][0],lbf=d.lower[d.lower.length-1][0];
+ const gcol=Math.max(pos[ubf.no].col+1,pos[lbf.no].col);
+ pos[d.grandFinal.no]={col:gcol,y:pos[ubf.no].y};pos[T.resetNo]={col:gcol,y:pos[ubf.no].y+H+16};
+ let maxY=0;Object.values(pos).forEach(p=>{maxY=Math.max(maxY,p.y)});
+ return{pos,CW,TOP,LEFT,lbTop,W:LEFT+(gcol+1)*CW+10,H:maxY+TOP+70,CARD:168,lbf:lbf.no};
+}
+function tplSlotView(m,side){
+ const s=m.src[side],id=m[side],team=id?getTeam(id):null,bye=side==='a'?m.byeA:m.byeB,seed=s.t==='seed'&&s.n<=data.doubleElim.tpl.n?s.n:'';
+ if(team)return{seed,html:`${team.logo?`<img class="tlogo" src="${team.logo}" alt="">`:''}<span class="tname">${esc(team.name)}</span>`};
+ if(bye)return{seed,html:'<span class="tname ph">BYE</span>'};
+ const txt=s.t==='seed'?'Seed '+s.n:(s.t==='w'?'Winner of ':'Loser of ')+s.no;
+ return{seed,html:`<span class="tname ph">${txt}</span>`};
+}
+function tplRender(d){
+ const area=$('bracketArea'),old=area.querySelector('.tplwrap'),sl=old?old.scrollLeft:0,st=old?old.scrollTop:0;
+ const T=d.tpl,L=tplLayout(d),all=tplAll(d),by={};all.forEach(m=>by[m.no]=m);
+ const X=c=>L.LEFT+c*L.CW,Y=y=>y+L.TOP;let lines='';
+ all.forEach(m=>['a','b'].forEach(sd=>{const s=m.src[sd];if(s.t!=='w'||!by[s.no]||m===d.resetFinal)return;if(s.no===L.lbf&&m===d.grandFinal)return;
+  const p=L.pos[s.no],q=L.pos[m.no];if(!p||!q)return;const x1=X(p.col)+L.CARD,y1=Y(p.y)+22,x2=X(q.col),y2=Y(q.y)+(sd==='a'?11:33),mx=Math.max(x1+8,(x1+x2)/2);
+  lines+=`<path d="M${x1} ${y1}H${mx}V${y2}H${x2}" />`}));
+ const card=m=>{const p=L.pos[m.no],A=tplSlotView(m,'a'),B=tplSlotView(m,'b'),sc=sd=>(m.sa!==''||m.sb!=='')?esc(m[sd==='a'?'sa':'sb']):'';
+  const cls=['tcard',(m.a&&m.b&&!m.winner)?'ready':'',(m.byeA||m.byeB)?'bye':'',(m.winner&&m.a&&m.b)?'done':''].join(' ');
+  const row=(V,sd)=>`<div class="trow ${m.winner&&m.winner===m[sd]&&m.a&&m.b?'w':''}"><i class="tseed">${V.seed}</i>${V.html}<b class="tscore">${sc(sd)}</b></div>`;
+  return `<div class="${cls}" style="left:${X(p.col)}px;top:${Y(p.y)}px" onclick="tplOpen(${m.no})" title="Match ${m.no}${m.date?' · '+esc(m.date)+' '+esc(m.time||''):''}"><span class="tno">${m.no}</span>${row(A,'a')}${row(B,'b')}</div>`};
+ const rp=L.pos[T.resetNo];
+ const nec=d.resetFinal?'':`<div class="tcard nec" style="left:${X(rp.col)}px;top:${Y(rp.y)}px"><span class="tno">${T.resetNo}</span><div class="trow"><i class="tseed"></i><span class="tname ph">(if necessary)</span></div><div class="trow"><i class="tseed"></i><span class="tname ph">Grand Final reset</span></div></div>`;
+ const champ=d.resetFinal?.winner||(d.grandFinal.winner&&(!d.resetFinal)&&d.grandFinal.winner===d.grandFinal.a?d.grandFinal.winner:null);
+ const ct=champ?getTeam(champ):null;
+ area.innerHTML=`<div class="tplwrap"><div class="tplcanvas" style="width:${L.W}px;height:${L.H}px"><svg class="tplsvg" width="${L.W}" height="${L.H}" fill="none" stroke="#6f84ad" stroke-width="1.5">${lines}</svg><div class="tzone" style="top:6px;left:${L.LEFT}px">UPPER BRACKET</div><div class="tzone" style="top:${Y(L.lbTop)-30}px;left:${L.LEFT}px">LOWER BRACKET</div>${all.map(card).join('')}${nec}</div></div><div class="smalltext" style="margin-top:8px">I-click ang match para maglagay ng score kapag kumpleto na ang dalawang teams.</div>${ct?`<div class="champion"><div class="cup">🏆</div><div class="eyebrow">TOURNAMENT CHAMPION</div><h2>${esc(ct.name)}</h2><p class="muted">Double-elimination champion</p></div>`:''}`;
+ const nw=area.querySelector('.tplwrap');if(nw){nw.scrollLeft=sl;nw.scrollTop=st}
+}
+function tplSeedCell(d,m,sd){
+ const T=d.tpl,s=m.src[sd];
+ if(s.t==='seed'){if(s.n>T.n)return '<span class="tplbye">BYE</span>';
+  return `<label class="tplsel"><em>Seed ${s.n}</em><select onchange="tplSetSeed(${s.n},this.value)"><option value="">— Empty —</option>${data.teams.map(t=>`<option value="${esc(t.id)}" ${T.seeds[s.n]===t.id?'selected':''}>${esc(t.name)}</option>`).join('')}</select></label>`}
+ return `<span class="tplwin">Winner of #${s.no}</span>`;
+}
+function tplRenderSetup(){
+ const el=$('bracketSetup');if(!el)return;
+ const d=data.doubleElim,T=d&&d.tpl,reg=data.teams.length;
+ let opts='<option value="">Pumili ng bilang ng teams…</option>';
+ for(let n=TPL_MIN;n<=TPL_MAX;n++)opts+=`<option value="${n}" ${T&&T.n===n?'selected':''}>${n} teams · ${2*n-2} matches</option>`;
+ let body='';
+ if(T){
+  const filled=Object.keys(T.seeds).length,rows=tplAll(d).filter(m=>m.src.a.t==='seed'||m.src.b.t==='seed');
+  const stage=m=>(T.k&&d.upper[0].includes(m))?'PLAY-IN':'UPPER R1';
+  body=`<div class="tplinfo">${esc(tplDescribe(T))}</div>
+  <div class="tplbtns"><button class="btn" onclick="tplAuto('random')">🎲 Generate random matchups</button><button class="btn secondary" onclick="tplAuto('order')">Seed by registration order</button><button class="btn secondary" onclick="tplClear()">Clear matchups</button><span class="pill">${filled} / ${T.n} slots filled</span>${reg>T.n?`<span class="pill" style="color:var(--gold)">${reg} registered > ${T.n} slots</span>`:''}${reg<T.n?`<span class="pill" style="color:var(--gold)">${reg} registered lang</span>`:''}</div>
+  <details class="tplmanual" ${tplUI.manual?'open':''} ontoggle="tplUI.manual=this.open"><summary>✏️ Manual matchup setup (pumili ng team sa bawat slot)</summary><div class="tplentries">${rows.map(m=>`<div class="tplentry"><b>#${m.no}</b><small>${stage(m)}</small>${tplSeedCell(d,m,'a')}<span class="muted">vs</span>${tplSeedCell(d,m,'b')}</div>`).join('')}</div></details>`;
+ }else if(data.generated&&d){
+  body='<div class="tplinfo">May lumang bracket format na naka-save. Pumili ng bilang ng teams para palitan ito ng bagong template.</div>';
+ }
+ el.innerHTML=`<div class="card tplsetup"><div class="tplctl"><label>Ilang team ang maglalaro?<select id="tplN" onchange="tplSetN(this.value)">${opts}</select></label><span class="pill">${reg} registered teams</span></div>${body}</div>`;
+}
+function tplSetN(v){
+ const N=Number(v);if(!N)return;const d=data.doubleElim;
+ if(d&&d.tpl&&d.tpl.n===N)return;
+ if((d&&tplHasScores(d)||(d&&!d.tpl))&&!confirm('Papalitan ang bracket template at mawawala ang kasalukuyang match scores at schedules. Ituloy?')){tplRenderSetup();return}
+ data.doubleElim=tplBuild(N,d&&d.tpl?d.tpl.seeds:{});data.bracket=[];data.generated=true;
+ data.liveMatch={matchId:'',status:'UPCOMING',streamUrl:'',bestOf:3,scoreA:0,scoreB:0};
+ tplRecalc(data.doubleElim);persist();toast(N+'-team bracket template ready. Mag-generate ng matchups o i-set nang manual.');
+}
+function tplAuto(mode){
+ const d=data.doubleElim;if(!d||!d.tpl)return;const T=d.tpl;
+ if(!data.teams.length){toast('Wala pang registered teams.');return}
+ if(tplHasScores(d)&&!confirm('May recorded match results. Mare-reset ang mga ito kapag nagbago ang matchups. Ituloy?'))return;
+ let list=data.teams.map(t=>t.id);
+ if(mode==='random')for(let i=list.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[list[i],list[j]]=[list[j],list[i]]}
+ list=list.slice(0,T.n);T.seeds={};list.forEach((id,i)=>T.seeds[i+1]=id);
+ tplRecalc(d);persist();toast(list.length<T.n?`${list.length} teams lang ang registered — may ${T.n-list.length} bakanteng slot.`:'Matchups generated.');
+}
+function tplClear(){
+ const d=data.doubleElim;if(!d||!d.tpl)return;
+ if(!confirm('Burahin ang lahat ng team assignments sa bracket?'))return;
+ d.tpl.seeds={};tplRecalc(d);persist();toast('Matchups cleared.');
+}
+function tplSetSeed(n,id){
+ const d=data.doubleElim;if(!d||!d.tpl)return;const S=d.tpl.seeds;
+ if(tplHasScores(d)&&!confirm('May recorded results. Mare-reset ang apektadong match kapag pinalitan ang team. Ituloy?')){tplRenderSetup();return}
+ if(id){const other=Object.keys(S).find(k=>S[k]===id&&+k!==n);if(other){if(S[n])S[other]=S[n];else delete S[other]}S[n]=id}else delete S[n];
+ tplRecalc(d);persist();
+}
+function tplOpen(no){
+ const d=data.doubleElim;if(!d||!d.tpl)return;const m=tplAll(d).find(x=>x.no===no);if(!m)return;
+ if(!m.a||!m.b){toast(m.byeA||m.byeB?'BYE ang match na ito — awtomatikong advance ang team.':'Hindi pa kumpleto ang dalawang teams ng match na ito.');return}
+ $('tplModalBody').innerHTML=matchHTML(m,0,m.no-1);$('tplModal').classList.remove('hidden');
+}
+function tplClose(){const m=$('tplModal');if(m)m.classList.add('hidden')}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')tplClose()});
+function renderBracket(){
+ tplRenderSetup();
+ const area=$('bracketArea');if(!area)return;const d=data.doubleElim;
+ if(!d&&data.generated&&data.bracket&&data.bracket.length){renderBracketLegacy();return}
+ if(!data.generated||!d){area.innerHTML='<div class="empty">Pumili muna ng bilang ng teams sa itaas. Lalabas dito ang bracket template.</div>';return}
+ if(!d.tpl){renderBracketLegacy();return}
+ tplRecalc(d);tplRender(d);
+}
+const _tplSaveScore=saveScore;saveScore=function(id){_tplSaveScore(id);tplClose()};
+
 function saveScore(id){let m=allMatches().find(x=>x.m.id===id)?.m;if(!m)return;const sa=$(id+'a')?.value,sb=$(id+'b')?.value,bestOf=Number($(id+'bo')?.value||m.bestOf||3),need=Math.floor(bestOf/2)+1;if(sa===''||sb===''||!Number.isInteger(+sa)||!Number.isInteger(+sb)){toast('Ilagay ang game wins ng parehong teams.');return}if(+sa<0||+sb<0||+sa>need||+sb>need||+sa===+sb||Math.max(+sa,+sb)!==need){toast('Invalid series score. Winner must reach '+need+' game wins for BO'+bestOf+'.');return}m.bestOf=bestOf;m.sa=String(+sa);m.sb=String(+sb);m.completedAt=new Date().toISOString();recalculate();persist();renderBracket();renderResults();renderSchedule();toast('Series result saved. Bracket advancement updated.');}
 function renderResults(){const rows=allMatches().filter(x=>x.m.a&&x.m.b&&x.m.winner);$('resultCount').textContent=rows.length+' results';$('resultsArea').innerHTML=rows.length?`<div class="tablewrap"><table><thead><tr><th>Bracket / Round</th><th>Match</th><th>Score</th><th>Winner</th></tr></thead><tbody>${rows.map(x=>`<tr><td>${esc(x.label||roundName(x.r,x.total||1))}</td><td>${esc(getTeam(x.m.a)?.name||'TBD')} vs ${esc(getTeam(x.m.b)?.name||'TBD')}</td><td>${x.m.sa} – ${x.m.sb}</td><td style="color:var(--gold);font-weight:800">${esc(getTeam(x.m.winner)?.name||'')}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">Wala pang completed matches. Maglagay ng scores sa Tournament Bracket tab.</div>'}
 
@@ -714,13 +917,13 @@ function deleteBracket(){
  data.bracket=[];data.doubleElim=null;data.generated=false;data.liveMatch={matchId:'',status:'UPCOMING',streamUrl:'',bestOf:3,scoreA:0,scoreB:0};persist();toast('Tournament bracket deleted. Registered teams ay nanatili.');
 }
 function matchLabel(m){return `${getTeam(m.a)?.name||'TBD'} vs ${getTeam(m.b)?.name||'TBD'}`}
-function allMatches(){const out=[];if(data.doubleElim){const d=data.doubleElim;d.upper.forEach((round,r)=>round.forEach((m,i)=>out.push({m,r,i,label:`UPPER BRACKET · Round ${r+1}`,section:'UPPER BRACKET',total:d.upper.length})));d.lower.forEach((round,r)=>round.forEach((m,i)=>out.push({m,r,i,label:`LOWER BRACKET · Round ${r+1}`,section:'LOWER BRACKET',total:d.lower.length})));if(d.grandFinal)out.push({m:d.grandFinal,r:0,i:0,label:'GRAND FINAL',section:'GRAND FINAL',total:1});if(d.resetFinal)out.push({m:d.resetFinal,r:0,i:0,label:'RESET FINAL',section:'RESET FINAL',total:1});}else (data.bracket||[]).forEach((round,r)=>round.forEach((m,i)=>out.push({m,r,i,label:roundName(r,data.bracket.length),section:'BRACKET',total:data.bracket.length})));return out}
+function allMatches(){const out=[];if(data.doubleElim){const d=data.doubleElim;d.upper.forEach((round,r)=>round.forEach((m,i)=>out.push({m,r,i,label:`UPPER BRACKET · ${(d.upperNames&&d.upperNames[r])||('Round '+(r+1))}`,section:'UPPER BRACKET',total:d.upper.length})));d.lower.forEach((round,r)=>round.forEach((m,i)=>out.push({m,r,i,label:`LOWER BRACKET · ${(d.lowerNames&&d.lowerNames[r])||('Round '+(r+1))}`,section:'LOWER BRACKET',total:d.lower.length})));if(d.grandFinal)out.push({m:d.grandFinal,r:0,i:0,label:'GRAND FINAL',section:'GRAND FINAL',total:1});if(d.resetFinal)out.push({m:d.resetFinal,r:0,i:0,label:'RESET FINAL',section:'RESET FINAL',total:1});}else (data.bracket||[]).forEach((round,r)=>round.forEach((m,i)=>out.push({m,r,i,label:roundName(r,data.bracket.length),section:'BRACKET',total:data.bracket.length})));return out}
 function getLiveMatch(){return allMatches().find(x=>x.m.id===data.liveMatch?.matchId)||null}
-function renderSchedule(){const area=$('scheduleArea');if(!area)return;if(!data.generated){area.innerHTML='<div class="empty">Generate muna ng tournament bracket bago magtakda ng match schedules.</div>';return}const matches=allMatches();area.innerHTML=matches.length?matches.map(({m,label,i})=>`<div class="schedule-round">${esc(label)}</div><div class="card"><div class="schedule-match">Match ${i+1}: ${esc(matchLabel(m))}</div><div class="schedule-form"><label>Date <input type="date" id="date_${m.id}" value="${esc(m.date||'')}"></label><label>Time <input type="time" id="time_${m.id}" value="${esc(m.time||'')}"></label><button class="btn small" onclick="saveSchedule('${m.id}')">Save Schedule</button>${m.date&&m.time?`<span class="schedule-time">📅 ${esc(m.date)} · ${esc(m.time)}</span>`:''}</div></div>`).join(''):'<div class="empty">No matches yet.</div>'}
+function renderSchedule(){const area=$('scheduleArea');if(!area)return;if(!data.generated){area.innerHTML='<div class="empty">Generate muna ng tournament bracket bago magtakda ng match schedules.</div>';return}const matches=allMatches();area.innerHTML=matches.length?matches.map(({m,label,i})=>`<div class="schedule-round">${esc(label)}</div><div class="card"><div class="schedule-match">Match ${m.no||i+1}: ${esc(matchLabel(m))}</div><div class="schedule-form"><label>Date <input type="date" id="date_${m.id}" value="${esc(m.date||'')}"></label><label>Time <input type="time" id="time_${m.id}" value="${esc(m.time||'')}"></label><button class="btn small" onclick="saveSchedule('${m.id}')">Save Schedule</button>${m.date&&m.time?`<span class="schedule-time">📅 ${esc(m.date)} · ${esc(m.time)}</span>`:''}</div></div>`).join(''):'<div class="empty">No matches yet.</div>'}
 function saveSchedule(id){const m=allMatches().find(x=>x.m.id===id)?.m;if(!m)return;m.date=$('date_'+id).value;m.time=$('time_'+id).value;if((m.date&&!m.time)||(!m.date&&m.time)){toast('Punan ang parehong date at time.');return}persist();renderSchedule();toast('Match schedule saved.')}
 function renderDashboardSchedules(){const el=$('dashboardSchedules');if(!el)return;const items=allMatches().filter(x=>x.m.date&&x.m.time);items.sort((a,b)=>(a.m.date+a.m.time).localeCompare(b.m.date+b.m.time));el.innerHTML=items.length?items.map(({m,label,i})=>{const a=getTeam(m.a),b=getTeam(m.b);return `<article class="arena-fixture"><div class="arena-fixture-top"><span>${esc(label)}</span><b>BEST OF ${Number(m.bestOf||3)}</b></div><div class="arena-fixture-main"><div class="arena-fixture-team">${teamLogoHTML(a)}<strong>${esc(a?.name||'TBD')}</strong></div><div class="arena-fixture-vs"><small>MATCH ${i+1}</small><b>VS</b><small>⚡</small></div><div class="arena-fixture-team right">${teamLogoHTML(b)}<strong>${esc(b?.name||'TBD')}</strong></div></div><div class="arena-fixture-bottom"><span>◷ ${esc(m.time)}</span><span>${esc(m.date)}</span></div></article>`}).join(''):'<div class="empty">Wala pang naka-schedule na matches.</div>'}
 function streamEmbed(url){try{const u=new URL(url);if(u.hostname.includes('youtu.be')){const id=u.pathname.slice(1);return id?`https://www.youtube.com/embed/${encodeURIComponent(id)}?autoplay=0`:''}if(u.hostname.includes('youtube.com')){const id=u.searchParams.get('v')||((u.pathname.match(/\/live\/([^/?]+)/)||[])[1])||((u.pathname.match(/\/embed\/([^/?]+)/)||[])[1]);return id?`https://www.youtube.com/embed/${encodeURIComponent(id)}?autoplay=0`:''}if(u.hostname.includes('facebook.com')||u.hostname.includes('fb.watch'))return 'https://www.facebook.com/plugins/video.php?href='+encodeURIComponent(url)+'&show_text=false&width=560';}catch(e){}return ''}
-function renderLiveMatch(){if(!data.liveMatch)data.liveMatch={matchId:'',status:'UPCOMING',streamUrl:'',bestOf:3,scoreA:0,scoreB:0};const lm=data.liveMatch,select=$('liveMatchSelect');if(!select)return;const options=allMatches().filter(x=>x.m.a&&x.m.b&&!x.m.winner);select.innerHTML='<option value="">Select a bracket match</option>'+options.map(({m,r,i,label})=>`<option value="${esc(m.id)}">${esc(label||roundName(r,data.bracket.length))} · Match ${i+1}: ${esc(matchLabel(m))}</option>`).join('');select.value=options.some(x=>x.m.id===lm.matchId)?lm.matchId:'';$('liveStreamUrl').value=lm.streamUrl||'';$('liveBestOf').value=String(lm.bestOf||3);const found=getLiveMatch(),m=found?.m,a=m?getTeam(m.a):null,b=m?getTeam(m.b):null;const pill=$('liveStatusPill');pill.textContent=lm.status||'UPCOMING';pill.className='live-pill '+(lm.status==='LIVE'?'live-status-live':lm.status==='ENDED'?'live-status-ended':'');$('liveTeamALabel').textContent=a?.name||'Team A';$('liveTeamBLabel').textContent=b?.name||'Team B';$('liveScoreboard').innerHTML=`<div class="score-team"><span class="team-crest-image">${esc((a?.name||'A').slice(0,2).toUpperCase())}</span><strong class="score-number blue-score">${Number(lm.scoreA)||0}</strong><span class="smalltext">${esc(a?.name||'Team A')}</span></div><div class="game-meta"><b>GAME ${Number(lm.scoreA||0)+Number(lm.scoreB||0)+1}</b><span>BO${Number(lm.bestOf||3)}</span></div><div class="score-team"><strong class="score-number red-score">${Number(lm.scoreB)||0}</strong><span class="team-crest-image">${esc((b?.name||'B').slice(0,2).toUpperCase())}</span><span class="smalltext">${esc(b?.name||'Team B')}</span></div>`;$('liveScoreA').textContent=lm.scoreA||0;$('liveScoreB').textContent=lm.scoreB||0;$('liveFormatLabel').textContent='BO'+(lm.bestOf||3);$('liveGameLabel').textContent='GAME '+(Number(lm.scoreA||0)+Number(lm.scoreB||0)+1);$('liveMatchNote').textContent=m?`${(found.label||roundName(found.r,found.total||1))} · ${matchLabel(m)}${lm.status==='ENDED'?' · Match ended':''}`:'Generate a bracket with at least two teams, then select an available match here.';const embed=streamEmbed(lm.streamUrl||'');$('liveStreamFrame').innerHTML=embed?`<iframe class="live-video" src="${embed}" title="Live match stream" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>`:'<div class="live-stream-placeholder">MLBB ARENA<br><span class="smalltext">Paste a valid YouTube Live or Facebook Live URL and save settings.</span></div>'; $('liveStreamLabel').textContent=embed?(lm.status==='LIVE'?'◉ LIVE STREAM':'STREAM CONNECTED'):'STREAM NOT CONNECTED';$('startLiveBtn').disabled=!m||lm.status==='LIVE';$('endLiveBtn').disabled=lm.status!=='LIVE'}
+function renderLiveMatch(){if(!data.liveMatch)data.liveMatch={matchId:'',status:'UPCOMING',streamUrl:'',bestOf:3,scoreA:0,scoreB:0};const lm=data.liveMatch,select=$('liveMatchSelect');if(!select)return;const options=allMatches().filter(x=>x.m.a&&x.m.b&&!x.m.winner);select.innerHTML='<option value="">Select a bracket match</option>'+options.map(({m,r,i,label})=>`<option value="${esc(m.id)}">${esc(label||roundName(r,data.bracket.length))} · Match ${m.no||i+1}: ${esc(matchLabel(m))}</option>`).join('');select.value=options.some(x=>x.m.id===lm.matchId)?lm.matchId:'';$('liveStreamUrl').value=lm.streamUrl||'';$('liveBestOf').value=String(lm.bestOf||3);const found=getLiveMatch(),m=found?.m,a=m?getTeam(m.a):null,b=m?getTeam(m.b):null;const pill=$('liveStatusPill');pill.textContent=lm.status||'UPCOMING';pill.className='live-pill '+(lm.status==='LIVE'?'live-status-live':lm.status==='ENDED'?'live-status-ended':'');$('liveTeamALabel').textContent=a?.name||'Team A';$('liveTeamBLabel').textContent=b?.name||'Team B';$('liveScoreboard').innerHTML=`<div class="score-team"><span class="team-crest-image">${esc((a?.name||'A').slice(0,2).toUpperCase())}</span><strong class="score-number blue-score">${Number(lm.scoreA)||0}</strong><span class="smalltext">${esc(a?.name||'Team A')}</span></div><div class="game-meta"><b>GAME ${Number(lm.scoreA||0)+Number(lm.scoreB||0)+1}</b><span>BO${Number(lm.bestOf||3)}</span></div><div class="score-team"><strong class="score-number red-score">${Number(lm.scoreB)||0}</strong><span class="team-crest-image">${esc((b?.name||'B').slice(0,2).toUpperCase())}</span><span class="smalltext">${esc(b?.name||'Team B')}</span></div>`;$('liveScoreA').textContent=lm.scoreA||0;$('liveScoreB').textContent=lm.scoreB||0;$('liveFormatLabel').textContent='BO'+(lm.bestOf||3);$('liveGameLabel').textContent='GAME '+(Number(lm.scoreA||0)+Number(lm.scoreB||0)+1);$('liveMatchNote').textContent=m?`${(found.label||roundName(found.r,found.total||1))} · ${matchLabel(m)}${lm.status==='ENDED'?' · Match ended':''}`:'Generate a bracket with at least two teams, then select an available match here.';const embed=streamEmbed(lm.streamUrl||'');$('liveStreamFrame').innerHTML=embed?`<iframe class="live-video" src="${embed}" title="Live match stream" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>`:'<div class="live-stream-placeholder">MLBB ARENA<br><span class="smalltext">Paste a valid YouTube Live or Facebook Live URL and save settings.</span></div>'; $('liveStreamLabel').textContent=embed?(lm.status==='LIVE'?'◉ LIVE STREAM':'STREAM CONNECTED'):'STREAM NOT CONNECTED';$('startLiveBtn').disabled=!m||lm.status==='LIVE';$('endLiveBtn').disabled=lm.status!=='LIVE'}
 function changeLiveMatch(){const id=$('liveMatchSelect').value;data.liveMatch.matchId=id;data.liveMatch.scoreA=0;data.liveMatch.scoreB=0;data.liveMatch.status='UPCOMING';const found=getLiveMatch();if(found){data.liveMatch.bestOf=Number(found.m.bestOf||3)}persist()}
 function changeLiveFormat(){data.liveMatch.bestOf=Number($('liveBestOf').value)||3;persist()}
 function saveLiveSettings(){const id=$('liveMatchSelect').value,url=$('liveStreamUrl').value.trim();if(!id){toast('Pumili muna ng bracket match.');return}if(url&&!streamEmbed(url)){toast('Hindi suportadong link. Gumamit ng YouTube Live o Facebook Live URL.');return}data.liveMatch.matchId=id;data.liveMatch.streamUrl=url;data.liveMatch.bestOf=Number($('liveBestOf').value)||3;const found=getLiveMatch();if(found)found.m.bestOf=data.liveMatch.bestOf;persist();toast('Live match settings saved.')}
@@ -752,7 +955,7 @@ function updateDashboardStats(){
  const rounds=Array.isArray(data.bracket)?data.bracket:[];
  const players=teams.reduce((n,t)=>n+(Array.isArray(t.players)?t.players.length:0),0);
  const matches=allMatches().map(x=>x.m);
- const actualMatches=data.generated&&teams.length>=2?(data.doubleElim?Math.max(0,2*teams.length-2):Math.max(0,teams.length-1)):0;
+ const actualMatches=data.generated&&teams.length>=2?(data.doubleElim?Math.max(0,2*(data.doubleElim.tpl?data.doubleElim.tpl.n:teams.length)-2):Math.max(0,teams.length-1)):0;
  const completed=matches.filter(m=>m&&m.a&&m.b&&m.winner).length;
  const champ=data.doubleElim?(data.doubleElim.resetFinal?.winner||data.doubleElim.grandFinal?.winner):(rounds.length?rounds[rounds.length-1]?.[0]?.winner:null);
  const set=(id,value)=>{const el=$(id);if(el)el.textContent=String(value)};
@@ -994,7 +1197,6 @@ window.drawRegQR=function(){$('regUrl').textContent=url();$('regUrl2').textConte
    const logo=/^data:image\//.test(x.logo||'')?x.logo:'';let t=data.teams.find(t=>t.name.toLowerCase()===name.toLowerCase());
    if(t){if(!t.captain)t.captain=x.captain;if(!t.logo&&logo)t.logo=logo;toast(name+' ay nasa Teams na — na-update ang captain/logo kung wala pa.')}
    else{data.teams.push({id:uid(),name,captain:x.captain,players:[],logo,groupPhoto:''});
-    if(!data.generated&&data.teams.length>=2)buildDoubleElim();
     toast(name+' idinagdag sa Teams.'+(data.generated?' I-rebuild ang bracket kung kailangan.':''))}
    teamRegs=teamRegs.filter(r=>r.id!==id);persist();renderTeamRegs()};
   window.rejectTeamReg=async function(id){if(!confirm('Itago ang team registration na ito?'))return;
