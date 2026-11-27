@@ -245,6 +245,10 @@ select{width:100%;background:#0c1426;border:1px solid var(--line);border-radius:
 }
 @media(max-width:340px){.res-scores{gap:5px}.res-tmhdr{flex-direction:column;text-align:center;min-height:78px;justify-content:center}.res-num{font-size:24px}}
 </style>
+<style>
+#rbNotice{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 12px);transform:translate(-50%,-140%);z-index:120;width:min(92vw,420px);box-sizing:border-box;padding:12px 14px;border-radius:12px;background:#0d1a40;border:1px solid #2b6bff;color:#fff;font-size:13px;line-height:1.35;box-shadow:0 10px 30px #000a;transition:transform .3s ease;pointer-events:none}
+#rbNotice.show{transform:translate(-50%,0)}
+</style>
 </head><body>
 
 <div id="intro">
@@ -880,6 +884,110 @@ window.rbMvpDraw=async function(cv,o){
   const rows=Object.values(map).sort((a,b)=>b.n-a.n||a.m.mvp.player.localeCompare(b.m.mvp.player)).slice(0,10);if(!rows.length)return'';
   return `<div class="sec-head" style="margin-top:22px"><b>MVP LEADERS</b><span>Pinakamaraming Match MVP</span></div><div class="card mvp-lb"><table><thead><tr><th>#</th><th>PLAYER</th><th>TEAM</th><th>MVP</th></tr></thead><tbody>${rows.map((r,i)=>{const p=plOf(r.m),t=team(r.m.mvp.teamId);return `<tr><td>${i+1}</td><td><span class="mvp-pl"><span class="mvp-av">${p&&p.photo?`<img src="${p.photo}" alt="">`:esc(String(r.m.mvp.player).slice(0,1).toUpperCase())}</span>${esc(r.m.mvp.player)}</span></td><td>${esc(t?t.name:'')}</td><td class="ct">${r.n}</td></tr>`}).join('')}</tbody></table></div>`};
  if(typeof V==='object'&&V&&V.standings){const s0=V.standings;V.standings=function(){return s0.apply(V,arguments)+mvpBoard()}}
+})();
+</script>
+<script>
+/* ===== Notifications: bagong upcoming match (push sa cellphone + in-app banner) ===== */
+(function(){
+ const ASKED='rb_push_asked',IOSHINT='rb_ios_hint',SEEN='rb_seen_up',SW_URL='push-sw.js',SW_SCOPE='push-scope/';
+ const supported=()=>'serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window&&window.isSecureContext;
+ const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+ const standalone=window.matchMedia&&matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
+ const b64=s=>{const p='='.repeat((4-s.length%4)%4),r=(s+p).replace(/-/g,'+').replace(/_/g,'/'),raw=atob(r);return Uint8Array.from([...raw].map(c=>c.charCodeAt(0)))};
+ const hdr=async(auth)=>({apikey:RB.key,Authorization:'Bearer '+(auth?await token():RB.key),'Content-Type':'application/json'});
+ let timer=null,busy=false,armed=false;
+
+ function notice(msg,ms){
+  let el=document.getElementById('rbNotice');
+  if(!el){el=document.createElement('div');el.id='rbNotice';el.setAttribute('role','status');document.body.appendChild(el)}
+  el.textContent=msg;el.classList.add('show');clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('show'),ms||6500);
+ }
+ async function getReg(){
+  let reg=await navigator.serviceWorker.getRegistration(SW_SCOPE).catch(()=>null);
+  if(!reg||!reg.active){reg=await navigator.serviceWorker.register(SW_URL,{scope:SW_SCOPE});}
+  if(reg.active)return reg;
+  const sw=reg.installing||reg.waiting;
+  if(!sw)return reg;
+  await new Promise((res,rej)=>{const t=setTimeout(()=>rej(Error('Hindi nag-activate ang service worker.')),10000);sw.addEventListener('statechange',()=>{if(sw.state==='activated'){clearTimeout(t);res()}})});
+  return reg;
+ }
+ async function postSub(sub){
+  const r=await fetch(RB.url+'/functions/v1/push',{method:'POST',headers:await hdr(true),body:JSON.stringify({action:'subscribe',subscription:sub.toJSON?sub.toJSON():sub})});
+  if(!r.ok){const j=await r.json().catch(()=>({}));const e=Error(j.error||('HTTP '+r.status));e.status=r.status;throw e}
+ }
+ // Awtomatiko: kapag allowed na ang notifications, i-subscribe (o i-refresh) ang device ng player.
+ async function subscribeNow(){
+  if(busy)return;busy=true;
+  try{
+   const reg=await getReg();
+   const kr=await fetch(RB.url+'/functions/v1/push?action=key',{headers:await hdr(false)});
+   const kj=await kr.json().catch(()=>({}));
+   if(!kr.ok||!kj.key)return;                       // hindi pa naka-setup ang server: tahimik lang
+   let sub=await reg.pushManager.getSubscription();
+   if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64(kj.key)});
+   await postSub(sub);
+  }catch(e){console.warn('push setup:',e&&e.message)}
+  finally{busy=false}
+ }
+ // Itatanong ang permission nang isang beses lang (sa unang tap ng player), hindi na ulit-ulitin kapag in-dismiss.
+ function askOnFirstTap(){
+  if(armed)return;armed=true;
+  const h=()=>{document.removeEventListener('click',h,true);document.removeEventListener('touchend',h,true);ask()};
+  document.addEventListener('click',h,true);document.addEventListener('touchend',h,true);
+ }
+ async function ask(){
+  const last=+localStorage.getItem(ASKED)||0;if(Date.now()-last<3*864e5)return;
+  localStorage.setItem(ASKED,String(Date.now()));
+  try{const p=await Notification.requestPermission();if(p==='granted')await subscribeNow()}catch(_){}
+ }
+ function autoPush(){
+  if(!supported()){
+   if(isIOS&&!standalone&&!localStorage.getItem(IOSHINT)){localStorage.setItem(IOSHINT,'1');notice('📲 Para makatanggap ng notification sa iPhone: pindutin ang Share → "Add to Home Screen", saka buksan ang app mula sa Home Screen.',14000)}
+   return;
+  }
+  const p=Notification.permission;
+  if(p==='granted')subscribeNow();
+  else if(p==='default')askOnFirstTap();
+ }
+ // ---- in-app: bagong upcoming habang bukas ang viewer
+ const upcoming=d=>((d&&d.matches)||[]).filter(m=>m.date&&m.time&&m.a&&m.b&&!m.winner).map(m=>({key:[m.id,m.a,m.b,m.date,m.time].join('|'),m}));
+ const when=m=>{const d=new Date(m.date+'T'+m.time);return isNaN(d)?m.date+' '+m.time:d.toLocaleString('en-PH',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})};
+ function checkUpcoming(){
+  if(typeof D==='undefined'||!D)return;
+  const list=upcoming(D);let seen=null;try{seen=JSON.parse(localStorage.getItem(SEEN))}catch(_){}
+  const keys=list.map(x=>x.key);
+  if(!Array.isArray(seen)){localStorage.setItem(SEEN,JSON.stringify(keys));return}
+  const fresh=list.filter(x=>!seen.includes(x.key));
+  localStorage.setItem(SEEN,JSON.stringify([...new Set([...seen,...keys])].slice(-300)));
+  if(!fresh.length)return;
+  const name=id=>((D.teams||[]).find(t=>t.id===id)||{}).name||'TBD';
+  const x=fresh[0].m;
+  notice('📅 Bagong upcoming match: '+name(x.a)+' vs '+name(x.b)+' · '+when(x)+(fresh.length>1?' (+'+(fresh.length-1)+' pa)':''),10000);
+ }
+ async function poll(){
+  if(!sess||document.hidden||busy)return;
+  try{
+   const t=await token(),h={apikey:RB.key,Authorization:'Bearer '+t};
+   const r=await fetch(RB.url+'/rest/v1/published?id=eq.1&select=updated_at',{headers:h});if(!r.ok)return;
+   const j=await r.json();const at=j[0]&&j[0].updated_at;if(!at)return;
+   if(D&&D._at===at){checkUpcoming();return}
+   const r2=await fetch(RB.url+'/rest/v1/published?id=eq.1&select=data,updated_at',{headers:h});if(!r2.ok)return;
+   const j2=await r2.json();if(!j2[0])return;
+   D={...j2[0].data,_at:j2[0].updated_at};checkUpcoming();
+   if(['standings','results','bracket','teams','schedule'].includes(tab))render();
+  }catch(_){}
+ }
+ window.pushInit=function(){
+  if(window.__pushInit)return;window.__pushInit=true;
+  autoPush();
+  setTimeout(checkUpcoming,2500);clearInterval(timer);timer=setInterval(poll,60000);
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)poll()});
+ };
+ window.__rbPush={checkUpcoming,upcoming};
+ const _start=window.start;
+ if(typeof _start==='function')window.start=function(){const r=_start.apply(this,arguments);try{pushInit()}catch(_){}return r};
+ const app=document.getElementById('app');
+ if(app&&!app.classList.contains('hidden')&&typeof sess!=='undefined'&&sess)pushInit();
 })();
 </script>
 </body></html>
