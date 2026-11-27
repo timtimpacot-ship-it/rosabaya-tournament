@@ -785,7 +785,7 @@ function tplRecalc(d){
  const T=d.tpl,res={},ms=tplAll(d).filter(m=>m!==d.resetFinal);
  const val=s=>{if(s.t==='seed'){if(s.n>T.n)return'BYE';const id=T.seeds[s.n];return id&&data.teams.some(t=>t.id===id)?id:null}const x=res[s.no];if(!x)return null;return s.t==='w'?x.w:x.l};
  ms.forEach(m=>{
-  const A=val(m.src.a),B=val(m.src.b),ta=(A&&A!=='BYE')?A:null,tb=(B&&B!=='BYE')?B:null;
+  const ovr=sd=>{const x=m.man&&m.man[sd];return x&&data.teams.some(t=>t.id===x)?x:null},A=ovr('a')||val(m.src.a),B=ovr('b')||val(m.src.b),ta=(A&&A!=='BYE')?A:null,tb=(B&&B!=='BYE')?B:null;
   if(ta!==m.a||tb!==m.b){m.sa='';m.sb='';m.winner=null}
   m.a=ta;m.b=tb;m.byeA=A==='BYE';m.byeB=B==='BYE';
   let w=null,l=null;
@@ -865,14 +865,28 @@ function tplRenderSetup(){
  let body='';
  if(T){
   const filled=Object.keys(T.seeds).length,rows=tplAll(d).filter(m=>m.src.a.t==='seed'||m.src.b.t==='seed');
-  const stage=m=>(T.k&&d.upper[0].includes(m))?'PLAY-IN':'UPPER R1';
+  const stage=m=>(T.k&&d.upper[0].includes(m))?'PLAY-IN':'UPPER R1';const lowerBlock=tplLowerBlock(d);
   body=`<div class="tplinfo">${esc(tplDescribe(T))}</div>
   <div class="tplbtns"><button class="btn" onclick="tplAuto('random')">🎲 Generate random matchups</button><button class="btn secondary" onclick="tplAuto('order')">Seed by registration order</button><button class="btn secondary" onclick="tplClear()">Clear matchups</button><span class="pill">${filled} / ${T.n} slots filled</span>${reg>T.n?`<span class="pill" style="color:var(--gold)">${reg} registered > ${T.n} slots</span>`:''}${reg<T.n?`<span class="pill" style="color:var(--gold)">${reg} registered lang</span>`:''}</div>
-  <details class="tplmanual" ${tplUI.manual?'open':''} ontoggle="tplUI.manual=this.open"><summary>✏️ Manual matchup setup (pumili ng team sa bawat slot)</summary><div class="tplentries">${rows.map(m=>`<div class="tplentry"><b>#${m.no}</b><small>${stage(m)}</small>${tplSeedCell(d,m,'a')}<span class="muted">vs</span>${tplSeedCell(d,m,'b')}</div>`).join('')}</div></details>`;
+  <details class="tplmanual" ${tplUI.manual?'open':''} ontoggle="tplUI.manual=this.open"><summary>✏️ Manual matchup setup (pumili ng team sa bawat slot)</summary><div class="tplentries">${rows.map(m=>`<div class="tplentry"><b>#${m.no}</b><small>${stage(m)}</small>${tplSeedCell(d,m,'a')}<span class="muted">vs</span>${tplSeedCell(d,m,'b')}</div>`).join('')}</div>${lowerBlock}</details>`;
  }else if(data.generated&&d){
   body='<div class="tplinfo">May lumang bracket format na naka-save. Pumili ng bilang ng teams para palitan ito ng bagong template.</div>';
  }
  el.innerHTML=`<div class="card tplsetup"><div class="tplctl"><label>Ilang team ang maglalaro?<select id="tplN" onchange="tplSetN(this.value)">${opts}</select></label><span class="pill">${reg} registered teams</span></div>${body}</div>`;
+}
+function tplLowerBlock(d){
+ const rows=[];d.lower.forEach((rd,i)=>rd.forEach(m=>rows.push({m,i})));rows.sort((x,y)=>x.m.no-y.m.no);
+ if(!rows.length)return '';
+ const auto=s=>s.t==='seed'?'Seed '+s.n:(s.t==='w'?'Winner of #':'Loser of #')+s.no;
+ const cell=(m,sd)=>`<label class="tplsel"><em>${sd==='a'?'Slot A':'Slot B'}</em><select onchange="tplSetManual(${m.no},'${sd}',this.value)"><option value="">Auto · ${auto(m.src[sd])}</option>${data.teams.map(t=>`<option value="${esc(t.id)}" ${m.man&&m.man[sd]===t.id?'selected':''}>${esc(t.name)}</option>`).join('')}</select></label>`;
+ return `<div class="tplinfo" style="margin-top:12px"><b>LOWER BRACKET</b> · Pumili ng team sa bawat slot, o iwanang <i>Auto</i> para kusang pumasok ang natalo/nanalo mula sa naunang match.</div><div class="tplentries">${rows.map(({m,i})=>`<div class="tplentry"><b>#${m.no}</b><small>LOWER R${i+1}</small>${cell(m,'a')}<span class="muted">vs</span>${cell(m,'b')}</div>`).join('')}</div>`;
+}
+function tplSetManual(no,sd,id){
+ const d=data.doubleElim;if(!d||!d.tpl)return;const m=tplAll(d).find(x=>x.no===no);if(!m)return;
+ if(tplHasScores(d)&&!confirm('May recorded results. Mare-reset ang apektadong match kapag pinalitan ang team. Ituloy?')){tplRenderSetup();return}
+ if(id)d.lower.flat().forEach(x=>{if(x.man)['a','b'].forEach(s=>{if(x.man[s]===id&&!(x===m&&s===sd))delete x.man[s]})});
+ m.man=m.man||{};if(id)m.man[sd]=id;else delete m.man[sd];
+ tplRecalc(d);persist();
 }
 function tplSetN(v){
  const N=Number(v);if(!N)return;const d=data.doubleElim;
@@ -894,7 +908,7 @@ function tplAuto(mode){
 function tplClear(){
  const d=data.doubleElim;if(!d||!d.tpl)return;
  if(!confirm('Burahin ang lahat ng team assignments sa bracket?'))return;
- d.tpl.seeds={};tplRecalc(d);persist();toast('Matchups cleared.');
+ d.tpl.seeds={};tplAll(d).forEach(m=>{delete m.man});tplRecalc(d);persist();toast('Matchups cleared.');
 }
 function tplSetSeed(n,id){
  const d=data.doubleElim;if(!d||!d.tpl)return;const S=d.tpl.seeds;
